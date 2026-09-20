@@ -3,11 +3,13 @@ import { COPY, celebrateLine } from "@shared/copy";
 import { hintFromLevel } from "@shared/hints";
 import { tokenizeTranscript } from "@shared/normalize";
 import { escalateStall, isHintLevel, nextStallLevel, stallLevelForElapsed } from "@shared/stall";
+import { GCP_LOCATION, GCP_PROJECT_ID } from "@shared/gcp";
 import type { AppConfig, HintResponse, OcrResult, PaceMode, ReadingWord, StallLevel } from "@shared/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMicStream } from "./hooks/useMicStream.ts";
 import { usePrefersReducedMotion } from "./hooks/usePrefersReducedMotion.ts";
 import { fetchConfig, fetchFixture, ocrPhoto, requestHint } from "./lib/api.ts";
+import { cropInset } from "./lib/crop.ts";
 import { DEMO_STEPS, delay } from "./lib/demoScript.ts";
 import { speakCoach, stopSpeech } from "./lib/speech.ts";
 import { Confirm } from "./screens/Confirm.tsx";
@@ -24,14 +26,15 @@ export function App() {
   const [config, setConfig] = useState<AppConfig>({
     gcpReady: false,
     mockMode: true,
-    project: "",
-    location: "us-central1",
+    project: GCP_PROJECT_ID,
+    location: GCP_LOCATION,
     saveSession: false,
   });
   const [forceReduced, setForceReduced] = useState(false);
   const reducedMotion = usePrefersReducedMotion(forceReduced);
   const [imageUrl, setImageUrl] = useState("");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [cropInsetAmount, setCropInsetAmount] = useState(0);
   const [busy, setBusy] = useState(false);
   const [warning, setWarning] = useState<string | undefined>();
   const [words, setWords] = useState<ReadingWord[]>([]);
@@ -95,6 +98,7 @@ export function App() {
     setReaderLive(false);
     setScreen("home");
     setPendingFile(null);
+    setCropInsetAmount(0);
     setWarning(undefined);
     setOcr(null);
     setWords([]);
@@ -276,6 +280,7 @@ export function App() {
     const url = URL.createObjectURL(file);
     setImageUrl(url);
     setPendingFile(file);
+    setCropInsetAmount(0);
     setWarning(undefined);
     setScreen("confirm");
   }
@@ -298,12 +303,19 @@ export function App() {
     setBusy(true);
     try {
       if (pendingFile) {
-        const result = await ocrPhoto(pendingFile);
+        const photo = await cropInset(pendingFile, cropInsetAmount);
+        let preview = imageUrl;
+        if (photo !== pendingFile) {
+          if (imageUrl.startsWith("blob:")) URL.revokeObjectURL(imageUrl);
+          preview = URL.createObjectURL(photo);
+          setImageUrl(preview);
+        }
+        const result = await ocrPhoto(photo);
         if (!toReadingWords(result.words).length) {
           setWarning(result.warning ?? COPY.noText);
           return;
         }
-        await beginReading(result, imageUrl);
+        await beginReading(result, preview);
         return;
       }
       const result = ocr ?? (await fetchFixture());
@@ -370,6 +382,8 @@ export function App() {
         imageUrl={imageUrl || FIXTURE_IMAGE}
         busy={busy}
         warning={warning}
+        cropInset={cropInsetAmount}
+        onCropInset={setCropInsetAmount}
         onConfirm={() => void onConfirm()}
         onRetake={goHome}
       />

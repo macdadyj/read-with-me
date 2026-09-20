@@ -27,8 +27,14 @@ export function Home({ config, reducedMotion, onToggleMotion, onPickImage, onUse
       <h1>{COPY.appName}</h1>
       <p className="lede">{COPY.tagline}</p>
       {config.mockMode ? (
-        <p className="banner">Demo mode is on. Camera and live speech work when GCP credentials are set.</p>
-      ) : null}
+        <p className="banner">
+          Demo mode is on. Live Vision, speech, and Gemini use {config.project} in {config.location} when ADC is set.
+        </p>
+      ) : (
+        <p className="banner banner--live">
+          Connected to {config.project} ({config.location}).
+        </p>
+      )}
 
       <input
         ref={cameraRef}

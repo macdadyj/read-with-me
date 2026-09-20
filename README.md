@@ -8,7 +8,7 @@ AI pieces are **Google Cloud only** (Vision or Document AI, Speech-to-Text Chirp
 
 ## Core loop
 
-1. **Capture** a workbook page (camera, upload, or the built-in sample).
+1. **Capture** a workbook page (camera, upload, or the built-in sample). Confirm with a simple Full / Tighten / Text-only crop.
 2. **Extract** lines and words with bounding boxes.
 3. **Coach start:** “Let’s start at the top.” Highlight the first reading word.
 4. **Listen** to the microphone (streamed to Cloud Speech-to-Text). A typed-word box stands in for the mic in local demo mode.
@@ -75,73 +75,89 @@ One Cloud Run service:
   - `POST /api/speak` — Cloud TTS (`en-US-Neural2-F` by default)
   - `GET /api/config` — whether GCP clients are live
 
-Simplest GCP-native choices used here: **Vision** (no Document AI processor to provision), **Speech-to-Text v2 Chirp 3** in location `us`, **Neural2 TTS**, **Gemini on Vertex** in `us-central1`. Clients are env-flagged: missing project/credentials → graceful mocks.
+Simplest GCP-native choices used here: **Vision** (no Document AI processor to provision), **Speech-to-Text v2 Chirp 3** in location `us`, **Neural2 TTS**, **Gemini on Vertex** in `us-central1`. Clients are env-flagged: missing ADC → graceful mocks. APIs can be enabled in parallel; the UI works on the sample page meanwhile.
 
 Photos and child audio are held in memory for the live request only. `SAVE_SESSION` defaults to false. No long-term child audio in v1.
 
 ## Enable APIs and deploy
 
-Leave `PROJECT_ID` as your project. Region defaults to `us-central1` except Speech v2 recognizers, which use multi-region `us`.
+Use the existing project **`montano-349204`**. Do not create a new project. Region is **`us-central1`** except Speech-to-Text v2 recognizers, which use multi-region `us`.
 
 ```bash
-export PROJECT_ID=your-gcp-project
-gcloud config set project "$PROJECT_ID"
+export GCP_PROJECT_ID=montano-349204
+export LOCATION=us-central1
+gcloud config set project "$GCP_PROJECT_ID"
 
 gcloud services enable \
   vision.googleapis.com \
+  documentai.googleapis.com \
   speech.googleapis.com \
   texttospeech.googleapis.com \
   aiplatform.googleapis.com \
   run.googleapis.com \
   cloudbuild.googleapis.com \
   artifactregistry.googleapis.com \
-  storage.googleapis.com
-
-# Optional later: documentai.googleapis.com
+  storage.googleapis.com \
+  --project="$GCP_PROJECT_ID"
 ```
 
+GCE may already be enabling these on `montano-349204`. The app keeps mock fallbacks until ADC and the APIs are actually ready.
+
 ### IAM (Cloud Run service account)
+
+Service name: **`read-with-me`** in `us-central1`.
 
 Grant the runtime service account at least:
 
 - `roles/aiplatform.user` — Vertex Gemini
 - `roles/speech.client` — streaming recognition
-- Vision and Cloud TTS work once those APIs are enabled for the project
+- Vision and Cloud TTS work once those APIs are enabled on `montano-349204`
 - `roles/storage.objectCreator` only if you set `GCS_BUCKET` and `SAVE_SESSION=true`
 
 ```bash
-export SA="$(gcloud run services describe read-with-me --region us-central1 --format='value(spec.template.spec.serviceAccountName)' 2>/dev/null \
-  || echo "${PROJECT_ID}@appspot.gserviceaccount.com")"
+export GCP_PROJECT_ID=montano-349204
+export SA="$(gcloud run services describe read-with-me \
+  --project="$GCP_PROJECT_ID" \
+  --region us-central1 \
+  --format='value(spec.template.spec.serviceAccountName)' 2>/dev/null \
+  || gcloud iam service-accounts list --project="$GCP_PROJECT_ID" \
+       --filter='email~compute@developer.gserviceaccount.com' \
+       --format='value(email)')"
 
-gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$SA" --role="roles/aiplatform.user"
-gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:$SA" --role="roles/speech.client"
+gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" --member="serviceAccount:$SA" --role="roles/aiplatform.user"
+gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" --member="serviceAccount:$SA" --role="roles/speech.client"
 ```
 
 ### Deploy
 
 ```bash
-gcloud builds submit --config cloudbuild.yaml
+export GCP_PROJECT_ID=montano-349204
+gcloud builds submit --project="$GCP_PROJECT_ID" --config cloudbuild.yaml
 # or
 gcloud run deploy read-with-me \
+  --project="$GCP_PROJECT_ID" \
   --source . \
   --region us-central1 \
   --allow-unauthenticated \
   --min-instances=0 \
-  --set-env-vars="GCP_PROJECT=$PROJECT_ID,GCP_LOCATION=us-central1,SPEECH_LOCATION=us,SAVE_SESSION=false"
+  --set-env-vars="GCP_PROJECT_ID=montano-349204,GCP_LOCATION=us-central1,SPEECH_LOCATION=us,SAVE_SESSION=false"
 ```
 
-`Dockerfile` and `cloudbuild.yaml` are in the repo. The service listens on `PORT` (8080) and scales to zero.
+`Dockerfile` and `cloudbuild.yaml` default to `montano-349204` / `us-central1` / service `read-with-me`. The service listens on `PORT` (8080) and scales to zero.
 
 ## Local path with Application Default Credentials
 
 ```bash
 gcloud auth application-default login
+gcloud auth application-default set-quota-project montano-349204
 cp .env.example .env
-# set GCP_PROJECT=your-gcp-project
+# already contains:
+#   GCP_PROJECT_ID=montano-349204
+#   GCP_LOCATION=us-central1
 npm run dev
 ```
 
-The Google client libraries pick up ADC automatically. Set `USE_MOCK_GCP=true` to force mocks even when ADC exists.
+The Google client libraries pick up ADC automatically and call `montano-349204`. If ADC or an API is missing, each client falls back to mocks. Set `USE_MOCK_GCP=true` to force mocks even when ADC exists.
 
 ## Cost drivers (estimates)
 

@@ -1,3 +1,4 @@
+import { GCP_LOCATION, GCP_PROJECT_ID } from "@shared/gcp";
 import type { AppConfig, HintRequest, HintResponse, OcrResult } from "@shared/types";
 
 async function readJson<T>(response: Response): Promise<T> {
@@ -15,8 +16,8 @@ export async function fetchConfig(): Promise<AppConfig> {
     return {
       gcpReady: false,
       mockMode: true,
-      project: "",
-      location: "us-central1",
+      project: GCP_PROJECT_ID,
+      location: GCP_LOCATION,
       saveSession: false,
     };
   }

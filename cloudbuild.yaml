@@ -1,33 +1,37 @@
-# Deploy Read With Me to Cloud Run (scale-to-zero).
-# gcloud builds submit --config cloudbuild.yaml
+# Deploy Read With Me to Cloud Run on montano-349204 (scale-to-zero).
+# gcloud builds submit --project=montano-349204 --config cloudbuild.yaml
 substitutions:
   _SERVICE: read-with-me
   _REGION: us-central1
+  _GCP_PROJECT_ID: montano-349204
 
 steps:
   - name: gcr.io/cloud-builders/docker
     args:
       - build
+      - --build-arg
+      - GCP_PROJECT_ID=${_GCP_PROJECT_ID}
       - -t
-      - gcr.io/$PROJECT_ID/${_SERVICE}:$COMMIT_SHA
+      - gcr.io/${_GCP_PROJECT_ID}/${_SERVICE}:$COMMIT_SHA
       - -t
-      - gcr.io/$PROJECT_ID/${_SERVICE}:latest
+      - gcr.io/${_GCP_PROJECT_ID}/${_SERVICE}:latest
       - .
   - name: gcr.io/cloud-builders/docker
     args:
       - push
-      - gcr.io/$PROJECT_ID/${_SERVICE}:$COMMIT_SHA
+      - gcr.io/${_GCP_PROJECT_ID}/${_SERVICE}:$COMMIT_SHA
   - name: gcr.io/cloud-builders/docker
     args:
       - push
-      - gcr.io/$PROJECT_ID/${_SERVICE}:latest
+      - gcr.io/${_GCP_PROJECT_ID}/${_SERVICE}:latest
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
     entrypoint: gcloud
     args:
       - run
       - deploy
       - ${_SERVICE}
-      - --image=gcr.io/$PROJECT_ID/${_SERVICE}:$COMMIT_SHA
+      - --project=${_GCP_PROJECT_ID}
+      - --image=gcr.io/${_GCP_PROJECT_ID}/${_SERVICE}:$COMMIT_SHA
       - --region=${_REGION}
       - --platform=managed
       - --allow-unauthenticated
@@ -37,11 +41,11 @@ steps:
       - --min-instances=0
       - --max-instances=5
       - --timeout=300
-      - --set-env-vars=GCP_PROJECT=$PROJECT_ID,GCP_LOCATION=${_REGION},SPEECH_LOCATION=us,SAVE_SESSION=false
+      - --set-env-vars=GCP_PROJECT_ID=${_GCP_PROJECT_ID},GCP_LOCATION=${_REGION},SPEECH_LOCATION=us,SAVE_SESSION=false
 
 images:
-  - gcr.io/$PROJECT_ID/${_SERVICE}:$COMMIT_SHA
-  - gcr.io/$PROJECT_ID/${_SERVICE}:latest
+  - gcr.io/${_GCP_PROJECT_ID}/${_SERVICE}:$COMMIT_SHA
+  - gcr.io/${_GCP_PROJECT_ID}/${_SERVICE}:latest
 
 options:
   logging: CLOUD_LOGGING_ONLY
