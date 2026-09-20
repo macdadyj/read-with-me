@@ -1,0 +1,47 @@
+# Deploy Read With Me to Cloud Run (scale-to-zero).
+# gcloud builds submit --config cloudbuild.yaml
+substitutions:
+  _SERVICE: read-with-me
+  _REGION: us-central1
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - gcr.io/$PROJECT_ID/${_SERVICE}:$COMMIT_SHA
+      - -t
+      - gcr.io/$PROJECT_ID/${_SERVICE}:latest
+      - .
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - gcr.io/$PROJECT_ID/${_SERVICE}:$COMMIT_SHA
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - gcr.io/$PROJECT_ID/${_SERVICE}:latest
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=gcr.io/$PROJECT_ID/${_SERVICE}:$COMMIT_SHA
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --port=8080
+      - --memory=1Gi
+      - --cpu=1
+      - --min-instances=0
+      - --max-instances=5
+      - --timeout=300
+      - --set-env-vars=GCP_PROJECT=$PROJECT_ID,GCP_LOCATION=${_REGION},SPEECH_LOCATION=us,SAVE_SESSION=false
+
+images:
+  - gcr.io/$PROJECT_ID/${_SERVICE}:$COMMIT_SHA
+  - gcr.io/$PROJECT_ID/${_SERVICE}:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY

@@ -1,0 +1,339 @@
+{
+  "source": "fixture",
+  "imageWidth": 1080,
+  "imageHeight": 1440,
+  "imageUrl": "/fixtures/workbook.png",
+  "lines": [
+    {
+      "index": 0,
+      "text": "The puppy ran down the hill."
+    },
+    {
+      "index": 1,
+      "text": "Then he sat in the sun."
+    },
+    {
+      "index": 2,
+      "text": "He was a happy little dog."
+    }
+  ],
+  "words": [
+    {
+      "id": "skip-0",
+      "text": "My",
+      "normalized": "my",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.07777777777777778,
+        "y": 0.05347222222222222,
+        "width": 0.07037037037037037,
+        "height": 0.03611111111111111
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-1",
+      "text": "Reading",
+      "normalized": "reading",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.15185185185185185,
+        "y": 0.05277777777777778,
+        "width": 0.17037037037037037,
+        "height": 0.03680555555555556
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-2",
+      "text": "Page",
+      "normalized": "page",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.35555555555555557,
+        "y": 0.05347222222222222,
+        "width": 0.10648148148148148,
+        "height": 0.03611111111111111
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-3",
+      "text": "Name:",
+      "normalized": "name",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.07777777777777778,
+        "y": 0.1,
+        "width": 0.09074074074074075,
+        "height": 0.022222222222222223
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-4",
+      "text": "Date:",
+      "normalized": "date",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.512962962962963,
+        "y": 0.1,
+        "width": 0.07592592592592592,
+        "height": 0.022222222222222223
+      },
+      "skip": true
+    },
+    {
+      "id": "w-5",
+      "text": "The",
+      "display": "The",
+      "normalized": "the",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.16111111111111112,
+        "y": 0.2986111111111111,
+        "width": 0.09444444444444444,
+        "height": 0.03680555555555556
+      },
+      "skip": false
+    },
+    {
+      "id": "w-6",
+      "text": "puppy",
+      "display": "puppy",
+      "normalized": "puppy",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.25730613425925924,
+        "y": 0.30625,
+        "width": 0.1537037037037037,
+        "height": 0.0375
+      },
+      "skip": false
+    },
+    {
+      "id": "w-7",
+      "text": "ran",
+      "display": "ran",
+      "normalized": "ran",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.4120081018518518,
+        "y": 0.30625,
+        "width": 0.08703703703703704,
+        "height": 0.029166666666666667
+      },
+      "skip": false
+    },
+    {
+      "id": "w-8",
+      "text": "down",
+      "display": "down",
+      "normalized": "down",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.5002025462962963,
+        "y": 0.2986111111111111,
+        "width": 0.1361111111111111,
+        "height": 0.03680555555555556
+      },
+      "skip": false
+    },
+    {
+      "id": "w-9",
+      "text": "the",
+      "display": "the",
+      "normalized": "the",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.6380931712962963,
+        "y": 0.2986111111111111,
+        "width": 0.08518518518518518,
+        "height": 0.03680555555555556
+      },
+      "skip": false
+    },
+    {
+      "id": "w-10",
+      "text": "hill",
+      "display": "hill.",
+      "normalized": "hill",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.7248987268518519,
+        "y": 0.2986111111111111,
+        "width": 0.09074074074074075,
+        "height": 0.03680555555555556
+      },
+      "skip": false
+    },
+    {
+      "id": "w-11",
+      "text": "Then",
+      "display": "Then",
+      "normalized": "then",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.16111111111111112,
+        "y": 0.3958333333333333,
+        "width": 0.125,
+        "height": 0.03680555555555556
+      },
+      "skip": false
+    },
+    {
+      "id": "w-12",
+      "text": "he",
+      "display": "he",
+      "normalized": "he",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.28706597222222224,
+        "y": 0.3958333333333333,
+        "width": 0.06759259259259259,
+        "height": 0.03680555555555556
+      },
+      "skip": false
+    },
+    {
+      "id": "w-13",
+      "text": "sat",
+      "display": "sat",
+      "normalized": "sat",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.35649594907407406,
+        "y": 0.3993055555555556,
+        "width": 0.0787037037037037,
+        "height": 0.03333333333333333
+      },
+      "skip": false
+    },
+    {
+      "id": "w-14",
+      "text": "in",
+      "display": "in",
+      "normalized": "in",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.43645833333333334,
+        "y": 0.39652777777777776,
+        "width": 0.053703703703703705,
+        "height": 0.035416666666666666
+      },
+      "skip": false
+    },
+    {
+      "id": "w-15",
+      "text": "the",
+      "display": "the",
+      "normalized": "the",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.49116030092592594,
+        "y": 0.3958333333333333,
+        "width": 0.08518518518518518,
+        "height": 0.03680555555555556
+      },
+      "skip": false
+    },
+    {
+      "id": "w-16",
+      "text": "sun",
+      "display": "sun.",
+      "normalized": "sun",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.5779658564814815,
+        "y": 0.40347222222222223,
+        "width": 0.10648148148148148,
+        "height": 0.029166666666666667
+      },
+      "skip": false
+    },
+    {
+      "id": "w-17",
+      "text": "He",
+      "display": "He",
+      "normalized": "he",
+      "lineIndex": 2,
+      "box": {
+        "x": 0.16111111111111112,
+        "y": 0.49444444444444446,
+        "width": 0.07407407407407407,
+        "height": 0.035416666666666666
+      },
+      "skip": false
+    },
+    {
+      "id": "w-18",
+      "text": "was",
+      "display": "was",
+      "normalized": "was",
+      "lineIndex": 2,
+      "box": {
+        "x": 0.23645833333333333,
+        "y": 0.5006944444444444,
+        "width": 0.09907407407407408,
+        "height": 0.029166666666666667
+      },
+      "skip": false
+    },
+    {
+      "id": "w-19",
+      "text": "a",
+      "display": "a",
+      "normalized": "a",
+      "lineIndex": 2,
+      "box": {
+        "x": 0.3368923611111111,
+        "y": 0.5006944444444444,
+        "width": 0.03796296296296296,
+        "height": 0.029166666666666667
+      },
+      "skip": false
+    },
+    {
+      "id": "w-20",
+      "text": "happy",
+      "display": "happy",
+      "normalized": "happy",
+      "lineIndex": 2,
+      "box": {
+        "x": 0.3764178240740741,
+        "y": 0.4930555555555556,
+        "width": 0.15092592592592594,
+        "height": 0.04513888888888889
+      },
+      "skip": false
+    },
+    {
+      "id": "w-21",
+      "text": "little",
+      "display": "little",
+      "normalized": "little",
+      "lineIndex": 2,
+      "box": {
+        "x": 0.528515625,
+        "y": 0.4930555555555556,
+        "width": 0.11018518518518519,
+        "height": 0.03680555555555556
+      },
+      "skip": false
+    },
+    {
+      "id": "w-22",
+      "text": "dog",
+      "display": "dog.",
+      "normalized": "dog",
+      "lineIndex": 2,
+      "box": {
+        "x": 0.6402199074074074,
+        "y": 0.4930555555555556,
+        "width": 0.11203703703703703,
+        "height": 0.04513888888888889
+      },
+      "skip": false
+    }
+  ]
+}
