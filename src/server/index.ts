@@ -36,6 +36,7 @@ app.get("/api/config", (_req, res) => {
     project: env.project,
     location: env.location,
     saveSession: env.saveSession,
+    bucket: env.gcsBucket,
   });
 });
 

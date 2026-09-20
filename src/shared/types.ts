@@ -74,6 +74,7 @@ export type AppConfig = {
   project: string;
   location: string;
   saveSession: boolean;
+  bucket?: string;
 };
 
 export function assertNever(value: never, message = "Unexpected value"): never {

@@ -41,7 +41,7 @@ export function getClients(): GcpClients {
       speech: new v2.SpeechClient({ projectId: env.project }),
       tts: new TextToSpeechClient({ projectId: env.project }),
       vertex: new VertexAI({ project: env.project, location: env.location }),
-      storage: env.gcsBucket ? new Storage({ projectId: env.project }) : null,
+      storage: new Storage({ projectId: env.project }),
     };
     return cached;
   } catch (error) {

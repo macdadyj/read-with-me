@@ -81,11 +81,23 @@ Photos and child audio are held in memory for the live request only. `SAVE_SESSI
 
 ## Enable APIs and deploy
 
-Use the existing project **`montano-349204`**. Do not create a new project. Region is **`us-central1`** except Speech-to-Text v2 recognizers, which use multi-region `us`.
+Use the existing project **`montano-349204`**. Do not create a new project.
+
+| Setting | Value |
+| --- | --- |
+| `GCP_PROJECT_ID` | `montano-349204` |
+| `REGION` | `us-central1` |
+| Cloud Run service | `read-with-me` |
+| Runtime SA | `read-with-me@montano-349204.iam.gserviceaccount.com` |
+| Bucket | `gs://montano-349204-read-with-me` |
+
+Speech-to-Text v2 recognizers still use multi-region `us`. Everything else is `us-central1`.
+
+These APIs are already enabled on `montano-349204`: Vision, Document AI, Speech-to-Text, Text-to-Speech, Vertex AI, Cloud Run, Cloud Storage, Cloud Build. Re-run only if a new machine needs it:
 
 ```bash
 export GCP_PROJECT_ID=montano-349204
-export LOCATION=us-central1
+export REGION=us-central1
 gcloud config set project "$GCP_PROJECT_ID"
 
 gcloud services enable \
@@ -96,54 +108,48 @@ gcloud services enable \
   aiplatform.googleapis.com \
   run.googleapis.com \
   cloudbuild.googleapis.com \
-  artifactregistry.googleapis.com \
   storage.googleapis.com \
   --project="$GCP_PROJECT_ID"
 ```
 
-GCE may already be enabling these on `montano-349204`. The app keeps mock fallbacks until ADC and the APIs are actually ready.
+Local `npm run dev` keeps mock fallbacks until ADC is present. Do not wait on further GCE work.
 
-### IAM (Cloud Run service account)
+### IAM
 
-Service name: **`read-with-me`** in `us-central1`.
-
-Grant the runtime service account at least:
+Deploy and run as **`read-with-me@montano-349204.iam.gserviceaccount.com`** (never the Compute default). That account needs:
 
 - `roles/aiplatform.user` — Vertex Gemini
 - `roles/speech.client` — streaming recognition
-- Vision and Cloud TTS work once those APIs are enabled on `montano-349204`
-- `roles/storage.objectCreator` only if you set `GCS_BUCKET` and `SAVE_SESSION=true`
+- Vision and Cloud TTS once those APIs are enabled (already on)
+- `roles/storage.objectAdmin` on `gs://montano-349204-read-with-me` if a parent later sets `SAVE_SESSION=true`
 
 ```bash
 export GCP_PROJECT_ID=montano-349204
-export SA="$(gcloud run services describe read-with-me \
-  --project="$GCP_PROJECT_ID" \
-  --region us-central1 \
-  --format='value(spec.template.spec.serviceAccountName)' 2>/dev/null \
-  || gcloud iam service-accounts list --project="$GCP_PROJECT_ID" \
-       --filter='email~compute@developer.gserviceaccount.com' \
-       --format='value(email)')"
+export SA=read-with-me@montano-349204.iam.gserviceaccount.com
 
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" --member="serviceAccount:$SA" --role="roles/aiplatform.user"
 gcloud projects add-iam-policy-binding "$GCP_PROJECT_ID" --member="serviceAccount:$SA" --role="roles/speech.client"
+gsutil iam ch "serviceAccount:${SA}:objectAdmin" gs://montano-349204-read-with-me
 ```
 
 ### Deploy
 
 ```bash
 export GCP_PROJECT_ID=montano-349204
+export REGION=us-central1
 gcloud builds submit --project="$GCP_PROJECT_ID" --config cloudbuild.yaml
 # or
 gcloud run deploy read-with-me \
   --project="$GCP_PROJECT_ID" \
   --source . \
-  --region us-central1 \
+  --region="$REGION" \
   --allow-unauthenticated \
   --min-instances=0 \
-  --set-env-vars="GCP_PROJECT_ID=montano-349204,GCP_LOCATION=us-central1,SPEECH_LOCATION=us,SAVE_SESSION=false"
+  --service-account=read-with-me@montano-349204.iam.gserviceaccount.com \
+  --set-env-vars="GCP_PROJECT_ID=montano-349204,REGION=us-central1,GCP_LOCATION=us-central1,SPEECH_LOCATION=us,GCS_BUCKET=gs://montano-349204-read-with-me,SAVE_SESSION=false"
 ```
 
-`Dockerfile` and `cloudbuild.yaml` default to `montano-349204` / `us-central1` / service `read-with-me`. The service listens on `PORT` (8080) and scales to zero.
+Manifests: `cloudbuild.yaml` and `deploy/cloud-run-service.yaml`. The service listens on `PORT` (8080) and scales to zero.
 
 ## Local path with Application Default Credentials
 
@@ -153,7 +159,8 @@ gcloud auth application-default set-quota-project montano-349204
 cp .env.example .env
 # already contains:
 #   GCP_PROJECT_ID=montano-349204
-#   GCP_LOCATION=us-central1
+#   REGION=us-central1
+#   GCS_BUCKET=gs://montano-349204-read-with-me
 npm run dev
 ```
 
