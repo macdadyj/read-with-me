@@ -53,9 +53,18 @@ export function App() {
   const previousHintsRef = useRef<string[]>([]);
   const stallStartedRef = useRef<number>(Date.now());
   const pauseStallRef = useRef(false);
+  const stallArmedRef = useRef(false);
   const demoAbortRef = useRef(false);
   const spokenLevelRef = useRef<StallLevel>(0);
   const seenFinalsRef = useRef<string>("");
+  const releaseTimerRef = useRef<number | null>(null);
+
+  function clearReleaseTimer() {
+    if (releaseTimerRef.current != null) {
+      window.clearTimeout(releaseTimerRef.current);
+      releaseTimerRef.current = null;
+    }
+  }
 
   useEffect(() => {
     void fetchConfig().then(setConfig);
@@ -75,6 +84,9 @@ export function App() {
     stallStartedRef.current = Date.now();
     spokenLevelRef.current = 0;
     seenFinalsRef.current = "";
+    stallArmedRef.current = false;
+    pauseStallRef.current = true;
+    clearReleaseTimer();
   }, []);
 
   const goHome = useCallback(() => {
@@ -131,7 +143,10 @@ export function App() {
       pauseStallRef.current = false;
     }
     if (level === 4) {
-      window.setTimeout(() => {
+      clearReleaseTimer();
+      const heldIndex = currentIndexRef.current;
+      releaseTimerRef.current = window.setTimeout(() => {
+        if (currentIndexRef.current !== heldIndex) return;
         if (currentIndexRef.current >= wordsRef.current.length) return;
         const released = releaseAfterCoach(currentIndexRef.current);
         currentIndexRef.current = released.currentIndex;
@@ -175,6 +190,7 @@ export function App() {
         }
       }
       if (result.matched) {
+        clearReleaseTimer();
         stopSpeech();
         previousHintsRef.current = [];
         setHint(null);
@@ -213,7 +229,7 @@ export function App() {
   useEffect(() => {
     if (!readerLive || micState === "paused") return;
     const timer = window.setInterval(() => {
-      if (pauseStallRef.current) return;
+      if (!stallArmedRef.current || pauseStallRef.current) return;
       const elapsed = Date.now() - stallStartedRef.current;
       const next = stallLevelForElapsed(elapsed, pace);
       if (next > spokenLevelRef.current && isHintLevel(next)) {
@@ -237,15 +253,22 @@ export function App() {
       wordsRef.current = reading;
       setImageUrl(url);
       resetTrack();
+      pauseStallRef.current = true;
       setScreen("reader");
       setReaderLive(true);
       setCoachNote(COPY.startAtTop);
+      const arm = () => {
+        stallStartedRef.current = Date.now();
+        spokenLevelRef.current = 0;
+        stallArmedRef.current = true;
+        pauseStallRef.current = false;
+      };
       if (!demo) {
-        await speakCoach(COPY.startAtTop);
-        if (!mockOnly) await start();
+        void speakCoach(COPY.startAtTop).then(arm);
+        if (!mockOnly && !config.mockMode) void start();
       }
     },
-    [mockOnly, resetTrack, start],
+    [config.mockMode, mockOnly, resetTrack, start],
   );
 
   async function onPickImage(file: File) {
@@ -295,7 +318,12 @@ export function App() {
     const result = await fetchFixture();
     await beginReading(result, FIXTURE_IMAGE, true);
     setPace("gentle");
-    await speakCoach(COPY.startAtTop);
+    void speakCoach(COPY.startAtTop).then(() => {
+      stallStartedRef.current = Date.now();
+      spokenLevelRef.current = 0;
+      stallArmedRef.current = true;
+      pauseStallRef.current = false;
+    });
     for (const step of DEMO_STEPS) {
       if (demoAbortRef.current) return;
       switch (step.kind) {

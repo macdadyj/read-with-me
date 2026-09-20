@@ -75,8 +75,7 @@ export function useMicStream({ onTokens, enabled }: Options): {
       };
       source.connect(node);
       setMicState("listening");
-    } catch (error) {
-      console.warn("Mic stream unavailable", error);
+    } catch {
       setMicState("error");
       setMockOnly(true);
     }

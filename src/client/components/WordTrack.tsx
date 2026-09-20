@@ -20,6 +20,7 @@ export function WordTrack({ words, currentIndex, underline, reveal }: Props) {
         return (
           <span
             key={word.id}
+            aria-current={active ? "true" : undefined}
             className={
               active ? "word-track__word is-active" : passed ? "word-track__word is-passed" : "word-track__word"
             }

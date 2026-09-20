@@ -32,13 +32,23 @@ export function Home({ config, reducedMotion, onToggleMotion, onPickImage, onUse
 
       <input
         ref={cameraRef}
-        className="sr-only"
+        className="file-input"
         type="file"
         accept="image/*"
         capture="environment"
         onChange={onFile}
+        aria-hidden="true"
+        tabIndex={-1}
       />
-      <input ref={uploadRef} className="sr-only" type="file" accept="image/*" onChange={onFile} />
+      <input
+        ref={uploadRef}
+        className="file-input"
+        type="file"
+        accept="image/*"
+        onChange={onFile}
+        aria-hidden="true"
+        tabIndex={-1}
+      />
 
       <button type="button" className="btn btn--primary" onClick={() => cameraRef.current?.click()}>
         {COPY.takePicture}

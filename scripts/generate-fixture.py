@@ -30,7 +30,7 @@ def word_box(draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, text: str,
     x, y = xy
     bbox = draw.textbbox((x, y), text, font=font)
     left, top, right, bottom = bbox
-    pad = 6
+    pad = 12
     return {
         "x": max(0, left - pad) / WIDTH,
         "y": max(0, top - pad) / HEIGHT,

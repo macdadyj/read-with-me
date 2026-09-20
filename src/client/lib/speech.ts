@@ -24,8 +24,13 @@ function speakInBrowser(text: string): Promise<void> {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.92;
     utterance.pitch = 0.95;
-    utterance.onend = () => resolve();
-    utterance.onerror = () => resolve();
+    const finish = () => {
+      window.clearTimeout(timer);
+      resolve();
+    };
+    const timer = window.setTimeout(finish, Math.min(4_000, 600 + text.length * 60));
+    utterance.onend = finish;
+    utterance.onerror = finish;
     window.speechSynthesis.speak(utterance);
   });
 }
@@ -33,7 +38,12 @@ function speakInBrowser(text: string): Promise<void> {
 export async function speakCoach(text: string): Promise<void> {
   stopSpeech();
   try {
-    const blob = await speakOnServer(text);
+    const blob = await Promise.race([
+      speakOnServer(text),
+      new Promise<null>((resolve) => {
+        window.setTimeout(() => resolve(null), 2500);
+      }),
+    ]);
     if (blob && blob.size > 0) {
       objectUrl = URL.createObjectURL(blob);
       const audio = new Audio(objectUrl);

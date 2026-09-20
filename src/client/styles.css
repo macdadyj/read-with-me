@@ -46,7 +46,8 @@ button {
   cursor: pointer;
 }
 
-.sr-only {
+.sr-only,
+.file-input {
   position: absolute;
   width: 1px;
   height: 1px;

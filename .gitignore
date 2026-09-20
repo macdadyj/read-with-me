@@ -6,3 +6,10 @@ dist
 .DS_Store
 coverage
 .vite
+.playwright-mcp
+*-desktop.png
+*-mobile.png
+reader-*.png
+home-*.png
+confirm-*.png
+done-*.png
