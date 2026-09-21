@@ -37,3 +37,19 @@ test("kid fold da advances The without jumping the line", async ({ page }) => {
   await say(page, "da");
   await expect(page.locator("[aria-current=true]")).toHaveText(/puppy/i);
 });
+
+test("cat, frog, and bus practice pages track the first two spoken words", async ({ page }) => {
+  const pages = [
+    { button: "Try the cat page", first: "the", next: /cat/i },
+    { button: "Try the frog page", first: "a", next: /frog/i },
+    { button: "Try the bus page", first: "the", next: /bus/i },
+  ];
+  for (const sample of pages) {
+    await page.goto("/");
+    await page.getByRole("button", { name: sample.button }).click();
+    await page.getByRole("button", { name: "This is the text" }).click();
+    await expect(page.locator("[aria-current=true]")).toBeVisible({ timeout: 20_000 });
+    await say(page, sample.first);
+    await expect(page.locator("[aria-current=true]")).toHaveText(sample.next);
+  }
+});

@@ -6,12 +6,13 @@ import cors from "cors";
 import express from "express";
 import multer from "multer";
 import { WebSocketServer } from "ws";
-import type { HintRequest } from "../shared/types.ts";
+import { isSamplePageId } from "../shared/samplePages.ts";
+import { assertNever, type HintRequest } from "../shared/types.ts";
 import { env } from "./env.ts";
 import { getClients } from "./gcp/clients.ts";
 import { generateHint } from "./gcp/gemini.ts";
 import { loadFixtureOcr, ocrImage } from "./gcp/ocr.ts";
-import { parseSttControlMessage } from "../shared/sttProtocol.ts";
+import { classifySttSocketPayload } from "../shared/sttProtocol.ts";
 import { audioToRecognizeRequest, openStreamingRecognize } from "./gcp/stt.ts";
 import { synthesizeSpeech } from "./gcp/tts.ts";
 import { logStt } from "./log.ts";
@@ -43,9 +44,14 @@ app.get("/api/config", (_req, res) => {
   });
 });
 
-app.get("/api/ocr/fixture", async (_req, res) => {
+app.get("/api/ocr/fixture", async (req, res) => {
+  const id = typeof req.query.id === "string" && req.query.id ? req.query.id : "puppy";
+  if (!isSamplePageId(id)) {
+    res.status(400).json({ error: "Unknown practice page." });
+    return;
+  }
   try {
-    const result = await loadFixtureOcr();
+    const result = await loadFixtureOcr(id);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: "Fixture missing", detail: String(error) });
@@ -155,29 +161,29 @@ wss.on("connection", (socket) => {
   });
 
   socket.on("message", (raw, isBinary) => {
-    if (!isBinary) {
-      const control = parseSttControlMessage(raw.toString());
-      if (control?.type === "end") {
-        logStt("end", { sessionId, frames: router.frames(), bytes: router.bytes() });
-        router.close();
-        recognize = null;
+    const payload = classifySttSocketPayload(raw, isBinary);
+    switch (payload.kind) {
+      case "control":
+        if (payload.message.type === "end") {
+          logStt("end", { sessionId, frames: router.frames(), bytes: router.bytes() });
+          router.close();
+          recognize = null;
+          return;
+        }
+        logStt("start", { sessionId, phrases: payload.message.phrases?.length ?? 0 });
+        return;
+      case "ignore":
+        logStt("bad-control", { sessionId });
+        return;
+      case "audio": {
+        const routed = router.writeAudio(payload.chunk);
+        if (router.frames() === 1 || router.frames() % 50 === 0) {
+          logStt("audio", { sessionId, frames: router.frames(), bytes: router.bytes(), routed });
+        }
         return;
       }
-      if (control?.type === "start") {
-        logStt("start", { sessionId, phrases: control.phrases?.length ?? 0 });
-        return;
-      }
-      if (!control) logStt("bad-control", { sessionId });
-      return;
-    }
-    const chunk = Buffer.isBuffer(raw)
-      ? raw
-      : Array.isArray(raw)
-        ? Buffer.concat(raw)
-        : Buffer.from(raw as ArrayBuffer);
-    const routed = router.writeAudio(chunk);
-    if (router.frames() === 1 || router.frames() % 50 === 0) {
-      logStt("audio", { sessionId, frames: router.frames(), bytes: router.bytes(), routed });
+      default:
+        return assertNever(payload);
     }
   });
 

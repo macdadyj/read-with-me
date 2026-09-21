@@ -16,6 +16,7 @@ import {
   createCapturePipeline,
   encodeCaptureFrame,
   feedCaptureToRecognizer,
+  MIC_AUDIO_CONSTRAINTS,
   PCM_WORKLET_SOURCE,
   QUIET_SPEECH_MAX_RMS,
 } from "./micCapture.ts";
@@ -91,6 +92,14 @@ describe("noise, pauses, and overlapping speech on the wire", () => {
     const stats = feedCaptureToRecognizer(overlapped, STT_SAMPLE_RATE, (request) => writes.push(request));
     expect(stats.framesSent).toBeGreaterThan(0);
     expect(peakPcm(writes[0]!.audio)).toBeGreaterThan(1000);
+  });
+});
+
+describe("live mic constraints", () => {
+  it("keeps auto-gain and does not run browser noise suppression on kid speech", () => {
+    expect(MIC_AUDIO_CONSTRAINTS.noiseSuppression).toBe(false);
+    expect(MIC_AUDIO_CONSTRAINTS.autoGainControl).toBe(true);
+    expect(MIC_AUDIO_CONSTRAINTS.sampleRate).toBe(STT_SAMPLE_RATE);
   });
 });
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createCapturePipeline, PCM_WORKLET_NAME, PCM_WORKLET_SOURCE } from "../lib/micCapture.ts";
+import { STT_SAMPLE_RATE } from "@shared/sttProtocol";
+import { createCapturePipeline, MIC_AUDIO_CONSTRAINTS, PCM_WORKLET_NAME, PCM_WORKLET_SOURCE } from "../lib/micCapture.ts";
 import { classifyMicVisualState, rmsFromByteTimeDomain, type MicVisualState } from "../lib/micLevel.ts";
 import { logMic } from "../lib/micLog.ts";
 import { sttSocketUrl } from "../lib/api.ts";
@@ -68,6 +69,7 @@ function openSttSocket(): Promise<WebSocket> {
 export function useMicStream({ onTokens, enabled, phrases = [] }: Options): {
   micState: MicState;
   rms: number;
+  prime: () => void;
   start: () => Promise<void>;
   pause: () => void;
   resume: () => Promise<void>;
@@ -84,6 +86,20 @@ export function useMicStream({ onTokens, enabled, phrases = [] }: Options): {
   onTokensRef.current = onTokens;
   const phrasesRef = useRef(phrases);
   phrasesRef.current = phrases;
+  const primedContextRef = useRef<AudioContext | null>(null);
+
+  const prime = useCallback(() => {
+    const existing = primedContextRef.current;
+    const context =
+      existing && existing.state !== "closed"
+        ? existing
+        : new AudioContext({ sampleRate: STT_SAMPLE_RATE });
+    primedContextRef.current = context;
+    if (context.state === "suspended") {
+      void context.resume();
+    }
+    logMic("prime", { state: context.state, sampleRate: context.sampleRate });
+  }, []);
 
   const setTransport = useCallback((transport: TransportState, nextRms = 0) => {
     transportRef.current = transport;
@@ -109,6 +125,9 @@ export function useMicStream({ onTokens, enabled, phrases = [] }: Options): {
     session.worklet.port.onmessage = null;
     session.worklet.disconnect();
     session.analyser.disconnect();
+    if (primedContextRef.current === session.context) {
+      primedContextRef.current = null;
+    }
     session.context.close().catch(() => undefined);
     session.stream.getTracks().forEach((track) => track.stop());
     const stats = session.pipeline.stats();
@@ -156,20 +175,25 @@ export function useMicStream({ onTokens, enabled, phrases = [] }: Options): {
     const abandoned = () => startIdRef.current !== startId;
     try {
       const media = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          channelCount: 1,
-          sampleRate: 16000,
-        },
+        audio: MIC_AUDIO_CONSTRAINTS,
       });
       if (abandoned()) {
         media.getTracks().forEach((track) => track.stop());
         return;
       }
-      const context = new AudioContext();
+      const primed = primedContextRef.current;
+      const context =
+        primed && primed.state !== "closed" ? primed : new AudioContext({ sampleRate: STT_SAMPLE_RATE });
+      primedContextRef.current = context;
       if (context.state === "suspended") {
         await context.resume();
+      }
+      if (context.state === "suspended") {
+        const unlock = () => {
+          void context.resume();
+        };
+        window.addEventListener("pointerdown", unlock, { once: true });
+        window.addEventListener("keydown", unlock, { once: true });
       }
       if (abandoned()) {
         media.getTracks().forEach((track) => track.stop());
@@ -344,5 +368,5 @@ export function useMicStream({ onTokens, enabled, phrases = [] }: Options): {
     };
   }, [enabled, start, stop, teardown]);
 
-  return { micState, rms, start, pause, resume, stop, mockOnly };
+  return { micState, rms, prime, start, pause, resume, stop, mockOnly };
 }

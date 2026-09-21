@@ -16,6 +16,9 @@ export function speechApiEndpoint(location: string): string {
   return `${location}-speech.googleapis.com`;
 }
 
+/** Chirp 3 default endpointing waits for a full sentence — too slow for one-word reading. */
+export const CHIRP_ENDPOINTING = "ENDPOINTING_SENSITIVITY_SUPERSHORT" as const;
+
 export function chirpStreamingConfig(): {
   config: {
     explicitDecodingConfig: {
@@ -29,6 +32,8 @@ export function chirpStreamingConfig(): {
   };
   streamingFeatures: {
     interimResults: true;
+    enableVoiceActivityEvents: true;
+    endpointingSensitivity: typeof CHIRP_ENDPOINTING;
   };
 } {
   return {
@@ -46,6 +51,9 @@ export function chirpStreamingConfig(): {
     },
     streamingFeatures: {
       interimResults: true,
+      enableVoiceActivityEvents: true,
+      // Finalize after each spoken word ("The", "Puppy") instead of waiting for a sentence.
+      endpointingSensitivity: CHIRP_ENDPOINTING,
     },
   };
 }
@@ -71,6 +79,42 @@ export function parseSttControlMessage(raw: string): SttControlMessage | null {
 /** Live Chirp when both flags are set; otherwise the typed-word mock — never a silent third path. */
 export function liveSpeechPath(gcpReady: boolean, speechClientPresent: boolean): "recognize" | "mock" {
   return gcpReady && speechClientPresent ? "recognize" : "mock";
+}
+
+export function toNodeBuffer(raw: unknown): Buffer {
+  if (Buffer.isBuffer(raw)) return raw;
+  if (Array.isArray(raw)) return Buffer.concat(raw);
+  if (raw instanceof ArrayBuffer) return Buffer.from(raw);
+  if (ArrayBuffer.isView(raw)) {
+    const view = raw as ArrayBufferView;
+    return Buffer.from(view.buffer, view.byteOffset, view.byteLength);
+  }
+  return Buffer.from(String(raw));
+}
+
+function looksLikeJsonObject(chunk: Buffer): boolean {
+  let index = 0;
+  while (index < chunk.length && (chunk[index] === 0x20 || chunk[index] === 0x0a || chunk[index] === 0x0d)) {
+    index += 1;
+  }
+  return chunk[index] === 0x7b;
+}
+
+/**
+ * Cloud Run / some browsers occasionally mark binary PCM as text.
+ * Treat even-length non-JSON frames as LINEAR16 so audio cannot be dropped as "bad-control".
+ */
+export function classifySttSocketPayload(
+  raw: unknown,
+  isBinary: boolean,
+): { kind: "audio"; chunk: Buffer } | { kind: "control"; message: SttControlMessage } | { kind: "ignore" } {
+  const chunk = toNodeBuffer(raw);
+  if (isBinary || (chunk.length >= 8 && chunk.length % 2 === 0 && !looksLikeJsonObject(chunk))) {
+    return { kind: "audio", chunk };
+  }
+  const control = parseSttControlMessage(chunk.toString("utf8"));
+  if (control) return { kind: "control", message: control };
+  return { kind: "ignore" };
 }
 
 /**

@@ -23,8 +23,8 @@ export async function fetchConfig(): Promise<AppConfig> {
   }
 }
 
-export async function fetchFixture(): Promise<OcrResult> {
-  return readJson<OcrResult>(await fetch("/api/ocr/fixture"));
+export async function fetchFixture(id = "puppy"): Promise<OcrResult> {
+  return readJson<OcrResult>(await fetch(`/api/ocr/fixture?id=${encodeURIComponent(id)}`));
 }
 
 export async function ocrPhoto(blob: Blob): Promise<OcrResult> {

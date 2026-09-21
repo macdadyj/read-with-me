@@ -1,3 +1,4 @@
+import { fuzzyMatch } from "./fuzzy.ts";
 import { isFunctionWord, tokenizeTranscript } from "./normalize.ts";
 
 /** First streaming packet this long is usually Chirp completing a line, not a child. */
@@ -59,12 +60,14 @@ export function consumeTranscript(
   cursor: TranscriptCursor,
   transcript: string,
   isFinal: boolean,
+  expected?: string,
 ): { nextCursor: TranscriptCursor; spoken: string[] } {
   const nextTokens = tokenizeTranscript(transcript);
   let stableTokens = nextTokens;
   if (!isFinal && nextTokens.length > 0) {
     const tail = nextTokens[nextTokens.length - 1] ?? "";
-    if (shouldHoldInterimTail(tail)) {
+    const tailMatchesExpected = Boolean(expected && fuzzyMatch(tail, expected));
+    if (shouldHoldInterimTail(tail) && !tailMatchesExpected) {
       stableTokens = nextTokens.slice(0, -1);
     }
   }

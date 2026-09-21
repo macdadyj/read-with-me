@@ -47,7 +47,7 @@ npm run dev
 
 Open `http://localhost:5173`.
 
-- **Use the sample page** loads `public/fixtures/workbook.png` plus mocked OCR JSON.
+- **Practice pages** on the home screen: the puppy, the cat, the frog, and the bus. Each opens a printed page you can read word by word.
 - **Type a word to pretend you said it** drives the real aligner.
 - **Play the demo** runs the script below.
 - Without Application Default Credentials the API stays in mock mode: fixture OCR, local hints, browser `speechSynthesis` if Cloud TTS returns 204.
@@ -221,7 +221,7 @@ That grants microphone permission, injects an oscillator, opens the reader, and 
 
 ### After redeploy (Cloud Run)
 
-On https://read-with-me-mxso6rumia-uc.a.run.app : sample page → start → watch the console for `[read-with-me:mic] stt-ready` (not `stt-mock`). Say **the** / **puppy** one at a time; the highlight should land on **ran**, not jump to **hill** or **Then**. A quiet voice should still move the meter and advance. Pause still stops the stream.
+On https://read-with-me-mxso6rumia-uc.a.run.app after this revision is deployed: sample page → **This is the text** (that click unlocks the AudioContext). Console should show `[read-with-me:mic] stt-ready` (not `stt-mock`). Say **The**, pause a beat, then **Puppy**. The badge should flip to “I hear you” and the highlight should move to **puppy**, then **ran**. Chirp is configured for one-word endpointing (`SUPERSHORT`). Pause still stops the stream.
 
 ### Mic diagnostics
 

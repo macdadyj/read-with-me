@@ -123,7 +123,8 @@ export function createListenSession(options: {
 
   return {
     ingest(transcript: string, isFinal: boolean) {
-      const consumed = consumeTranscript(cursor, transcript, isFinal);
+      const expected = words[index]?.text;
+      const consumed = consumeTranscript(cursor, transcript, isFinal, expected);
       cursor = consumed.nextCursor;
       if (!consumed.spoken.length) return snapshot();
       return applyResult(applySpokenTokens(words, index, consumed.spoken), consumed.spoken);

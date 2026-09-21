@@ -3,6 +3,7 @@ import { COPY, celebrateLine } from "@shared/copy";
 import { hintFromLevel } from "@shared/hints";
 import { createListenSession, type ListenSession, type ListenSnapshot } from "@shared/listenTracker";
 import { isHintLevel, nextStallLevel } from "@shared/stall";
+import { samplePageById, type SamplePageId } from "@shared/samplePages";
 import { GCP_LOCATION, GCP_PROJECT_ID } from "@shared/gcp";
 import type { AppConfig, HintResponse, OcrResult, PaceMode, ReadingWord, StallLevel } from "@shared/types";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -229,7 +230,7 @@ export function App() {
     [applySnapshot],
   );
 
-  const { micState, rms, pause, resume } = useMicStream({
+  const { micState, rms, pause, resume, prime } = useMicStream({
     enabled: readerLive && !scriptedDemo,
     phrases: words.map((word) => word.text),
     onTokens: (tokens, isFinal) => {
@@ -300,12 +301,13 @@ export function App() {
     setScreen("confirm");
   }
 
-  async function onUseSample() {
+  async function onUseSample(id: SamplePageId = "puppy") {
     setBusy(true);
     try {
-      const result = await fetchFixture();
+      const sample = samplePageById(id);
+      const result = await fetchFixture(sample.id);
       setPendingFile(null);
-      setImageUrl(FIXTURE_IMAGE);
+      setImageUrl(sample.imageUrl);
       setOcr(result);
       setWarning(undefined);
       setScreen("confirm");
@@ -315,6 +317,7 @@ export function App() {
   }
 
   async function onConfirm() {
+    prime();
     setBusy(true);
     try {
       if (pendingFile) {
@@ -389,7 +392,7 @@ export function App() {
         reducedMotion={forceReduced}
         onToggleMotion={setForceReduced}
         onPickImage={(file) => void onPickImage(file)}
-        onUseSample={() => void onUseSample()}
+        onUseSample={(id) => void onUseSample(id)}
         onPlayDemo={() => void onPlayDemo()}
       />
     );

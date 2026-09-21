@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { applyCleanupMap, markSkippableWords } from "../../shared/cleanup.ts";
 import { normalizeToken } from "../../shared/normalize.ts";
+import { isSamplePageId, samplePageById } from "../../shared/samplePages.ts";
 import type { BoundingBox, OcrResult, OcrWord } from "../../shared/types.ts";
 import { env } from "../env.ts";
 import { getClients } from "./clients.ts";
@@ -19,10 +20,15 @@ function fixtureDir(): string {
   return candidates[0] ?? path.resolve(process.cwd(), "public/fixtures");
 }
 
-export async function loadFixtureOcr(): Promise<OcrResult> {
-  const jsonPath = path.join(fixtureDir(), "workbook.ocr.json");
+export async function loadFixtureOcr(id = "puppy"): Promise<OcrResult> {
+  if (!isSamplePageId(id)) {
+    throw new Error(`Unknown practice page: ${id}`);
+  }
+  const page = samplePageById(id);
+  const jsonPath = path.join(fixtureDir(), page.ocrFile);
   const raw = await readFile(jsonPath, "utf8");
-  return JSON.parse(raw) as OcrResult;
+  const parsed = JSON.parse(raw) as OcrResult;
+  return { ...parsed, imageUrl: page.imageUrl };
 }
 
 function verticesToBox(

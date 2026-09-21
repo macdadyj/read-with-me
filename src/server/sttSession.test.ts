@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  CHIRP_ENDPOINTING,
   CHIRP_MODEL,
   STT_LANGUAGE,
   STT_SAMPLE_RATE,
   chirpStreamingConfig,
+  classifySttSocketPayload,
   liveSpeechPath,
   parseSttControlMessage,
 } from "../shared/sttProtocol.ts";
@@ -77,6 +79,16 @@ describe("Chirp streaming config", () => {
     expect(config.config.explicitDecodingConfig.sampleRateHertz).toBe(STT_SAMPLE_RATE);
     expect(config.config.features.enableAutomaticPunctuation).toBe(false);
     expect(config.streamingFeatures.interimResults).toBe(true);
+    expect(config.streamingFeatures.enableVoiceActivityEvents).toBe(true);
+    expect(config.streamingFeatures.endpointingSensitivity).toBe(CHIRP_ENDPOINTING);
+    expect(config.streamingFeatures.endpointingSensitivity).toBe("ENDPOINTING_SENSITIVITY_SUPERSHORT");
+  });
+
+  it("routes even-length PCM as audio even when the socket marks it as text", () => {
+    const pcm = Buffer.alloc(32, 1);
+    expect(classifySttSocketPayload(pcm, false).kind).toBe("audio");
+    expect(classifySttSocketPayload(JSON.stringify({ type: "end" }), false).kind).toBe("control");
+    expect(classifySttSocketPayload(pcm, true).kind).toBe("audio");
   });
 
   it("parses start / end control messages for the listen socket", () => {
