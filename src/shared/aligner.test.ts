@@ -81,6 +81,20 @@ describe("aligner", () => {
     expect(result.failed).toBe(true);
   });
 
+  it("walks a continuous phrase in order and stops at the next line", () => {
+    const result = applySpokenTokens(page, 0, ["the", "puppy", "ran", "down", "the", "hill"]);
+    expect(result.currentIndex).toBe(6);
+    expect(page[result.currentIndex]?.text).toBe("Then");
+  });
+
+  it("does not treat a replay of earlier words as the second the", () => {
+    const replay = applySpokenTokens(page, 4, ["the", "puppy", "ran", "down"]);
+    expect(replay.currentIndex).toBe(4);
+    expect(replay.failed).toBe(false);
+    const current = applySpokenTokens(page, 4, ["the"]);
+    expect(current.currentIndex).toBe(5);
+  });
+
   it("tokenizes a transcript into words", () => {
     expect(tokenizeTranscript("The puppy!")).toEqual(["the", "puppy"]);
     const result = applyTranscript(page, 0, "the puppy");

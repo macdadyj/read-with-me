@@ -2,21 +2,43 @@ import { fuzzyMatch } from "./fuzzy.ts";
 import { isFunctionWord, tokenizeTranscript } from "./normalize.ts";
 import type { AlignerEvent, AlignerResult, OcrWord, ReadingWord } from "./types.ts";
 
-const ECHO_WINDOW = 3;
-
 export function toReadingWords(words: OcrWord[]): ReadingWord[] {
   return words
     .filter((word) => !word.skip)
     .map((word, readingIndex) => ({ ...word, readingIndex }));
 }
 
-function isEchoOfRecent(token: string, words: ReadingWord[], index: number): boolean {
-  const start = Math.max(0, index - ECHO_WINDOW);
-  for (let i = start; i < index; i += 1) {
+function isEchoOfRead(token: string, words: ReadingWord[], index: number): boolean {
+  for (let i = 0; i < index; i += 1) {
     const previous = words[i];
     if (previous && fuzzyMatch(token, previous.text)) return true;
   }
   return false;
+}
+
+/**
+ * Chirp often replays words the child already read, then continues.
+ * A leading run that matches the tail of the read words is echo.
+ * "the" while the highlight is on the second "the" does not match that tail, so it still counts.
+ */
+function leadingReplayLength(spoken: string[], words: ReadingWord[], index: number): number {
+  const readCount = Math.max(0, Math.min(index, words.length));
+  let best = 0;
+  const limit = Math.min(spoken.length, readCount);
+  for (let len = 1; len <= limit; len += 1) {
+    const start = readCount - len;
+    let matches = true;
+    for (let i = 0; i < len; i += 1) {
+      const pageWord = words[start + i];
+      const token = spoken[i];
+      if (!pageWord || !token || !fuzzyMatch(token, pageWord.text)) {
+        matches = false;
+        break;
+      }
+    }
+    if (matches) best = len;
+  }
+  return best;
 }
 
 export function applySpokenTokens(
@@ -29,7 +51,18 @@ export function applySpokenTokens(
   let matched = false;
   let failed = false;
 
-  for (const token of spokenTokens) {
+  const replay = leadingReplayLength(spokenTokens, words, index);
+  for (let i = 0; i < replay; i += 1) {
+    const token = spokenTokens[i] ?? "";
+    const previous = index > 0 ? words[index - 1] : undefined;
+    if (replay === 1 && previous && fuzzyMatch(token, previous.text)) {
+      events.push({ type: "repeat-previous" });
+    } else {
+      events.push({ type: "echo" });
+    }
+  }
+
+  for (const token of spokenTokens.slice(replay)) {
     if (index >= words.length) break;
     const current = words[index];
     if (!current) break;
@@ -55,7 +88,7 @@ export function applySpokenTokens(
       continue;
     }
 
-    if (isEchoOfRecent(token, words, index)) {
+    if (isEchoOfRead(token, words, index)) {
       events.push({ type: "echo" });
       continue;
     }
