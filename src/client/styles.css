@@ -258,6 +258,10 @@ h1 {
   font-size: 0.92rem;
 }
 
+.mic-badge__label {
+  white-space: nowrap;
+}
+
 .mic-dot {
   width: 10px;
   height: 10px;
@@ -265,14 +269,72 @@ h1 {
   background: var(--ink-soft);
 }
 
+.mic-badge--quiet .mic-dot,
 .mic-badge--listening .mic-dot {
   background: var(--moss);
   box-shadow: 0 0 0 6px rgba(44, 106, 88, 0.16);
 }
 
+.mic-badge--hearing {
+  background: #dff3ea;
+}
+
+.mic-badge--hearing .mic-dot {
+  background: var(--moss);
+  box-shadow: 0 0 0 7px rgba(44, 106, 88, 0.22);
+}
+
+.mic-badge--hearing:not(:has(.mic-meter--still)) .mic-dot {
+  animation: mic-pulse 1s ease-in-out infinite;
+}
+
 .mic-badge--paused .mic-dot,
-.mic-badge--error .mic-dot {
+.mic-badge--error .mic-dot,
+.mic-badge--permission-denied .mic-dot {
   background: var(--rose);
+}
+
+.mic-badge--error,
+.mic-badge--permission-denied {
+  background: #f8e4e2;
+}
+
+.mic-meter {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 18px;
+  min-width: 28px;
+}
+
+.mic-meter__bar {
+  width: 4px;
+  min-height: 3px;
+  border-radius: 99px;
+  background: var(--moss);
+  transform-origin: bottom;
+}
+
+.mic-badge--hearing .mic-meter__bar {
+  background: var(--moss-deep);
+}
+
+.mic-badge--error .mic-meter__bar,
+.mic-badge--permission-denied .mic-meter__bar,
+.mic-badge--paused .mic-meter__bar {
+  background: var(--rose);
+}
+
+@keyframes mic-pulse {
+  50% {
+    box-shadow: 0 0 0 10px rgba(44, 106, 88, 0.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mic-badge--hearing .mic-dot {
+    animation: none;
+  }
 }
 
 .pace-toggle {

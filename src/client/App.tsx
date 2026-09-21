@@ -47,6 +47,7 @@ export function App() {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [lastAttempt, setLastAttempt] = useState<string | null>(null);
   const [readerLive, setReaderLive] = useState(false);
+  const [scriptedDemo, setScriptedDemo] = useState(false);
 
   const currentIndexRef = useRef(0);
   const wordsRef = useRef<ReadingWord[]>([]);
@@ -96,6 +97,7 @@ export function App() {
     demoAbortRef.current = true;
     stopSpeech();
     setReaderLive(false);
+    setScriptedDemo(false);
     setScreen("home");
     setPendingFile(null);
     setCropInsetAmount(0);
@@ -220,8 +222,8 @@ export function App() {
     [applyHint, finishPage],
   );
 
-  const { micState, start, pause, resume, mockOnly } = useMicStream({
-    enabled: readerLive,
+  const { micState, rms, pause, resume } = useMicStream({
+    enabled: readerLive && !scriptedDemo,
     onTokens: (tokens, isFinal) => {
       const joined = tokens.join(" ").toLowerCase();
       if (!isFinal && joined === seenFinalsRef.current) return;
@@ -259,6 +261,7 @@ export function App() {
       resetTrack();
       pauseStallRef.current = true;
       setScreen("reader");
+      setScriptedDemo(demo);
       setReaderLive(true);
       setCoachNote(COPY.startAtTop);
       const arm = () => {
@@ -269,10 +272,9 @@ export function App() {
       };
       if (!demo) {
         void speakCoach(COPY.startAtTop).then(arm);
-        if (!mockOnly && !config.mockMode) void start();
       }
     },
-    [config.mockMode, mockOnly, resetTrack, start],
+    [resetTrack],
   );
 
   async function onPickImage(file: File) {
@@ -400,6 +402,7 @@ export function App() {
       pace={pace}
       onPace={setPace}
       micState={micState}
+      micRms={rms}
       hint={hint}
       coachNote={coachNote}
       reducedMotion={reducedMotion}

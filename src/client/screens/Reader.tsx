@@ -14,6 +14,7 @@ type Props = {
   pace: PaceMode;
   onPace: (value: PaceMode) => void;
   micState: MicState;
+  micRms?: number;
   hint: HintResponse | null;
   coachNote: string;
   reducedMotion: boolean;
@@ -32,6 +33,7 @@ export function Reader({
   pace,
   onPace,
   micState,
+  micRms = 0,
   hint,
   coachNote,
   reducedMotion,
@@ -54,7 +56,7 @@ export function Reader({
       />
       <section className="reader__panel">
         <div className="reader__top">
-          <MicBadge state={micState} />
+          <MicBadge state={micState} rms={micRms} reducedMotion={reducedMotion} />
           <PaceToggle value={pace} onChange={onPace} />
         </div>
         <WordTrack

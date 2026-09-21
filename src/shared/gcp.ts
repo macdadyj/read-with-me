@@ -16,6 +16,8 @@ export const GCS_BUCKET = "montano-349204-read-with-me";
 
 export const GCS_BUCKET_URI = "gs://montano-349204-read-with-me";
 
+export { speechApiEndpoint } from "./sttProtocol.ts";
+
 export function normalizeBucketName(value: string): string {
   return value.replace(/^gs:\/\//, "").replace(/\/+$/, "");
 }
