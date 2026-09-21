@@ -1,8 +1,5 @@
 import { fuzzyMatch } from "./fuzzy.ts";
-import { isFunctionWord, tokenizeTranscript } from "./normalize.ts";
-
-/** First streaming packet this long is usually Chirp completing a line, not a child. */
-export const SUDDEN_DUMP_TOKEN_THRESHOLD = 4;
+import { foldKidPronunciation, isFunctionWord, tokenizeTranscript } from "./normalize.ts";
 
 export type TranscriptCursor = {
   tokens: string[];
@@ -27,59 +24,52 @@ export function commonTokenPrefixLength(previous: string[], next: string[]): num
   return index;
 }
 
-/** Keep a leading function word plus the first content word. */
-export function firstSpokenBurst(tokens: string[]): string[] {
-  const burst: string[] = [];
-  for (const token of tokens) {
-    burst.push(token);
-    if (!isFunctionWord(token)) break;
-  }
-  return burst;
-}
-
 export function newTokensSince(previous: string[], next: string[]): string[] {
   return next.slice(commonTokenPrefixLength(previous, next));
 }
 
-/**
- * Hold the trailing interim token when it still looks like a cut-off word
- * ("pu", "pup", "hil"). Closed-class words like "the" are applied immediately.
- */
-export function shouldHoldInterimTail(token: string): boolean {
-  if (!token) return false;
-  if (isFunctionWord(token)) return false;
-  return token.length <= 3;
+/** "pup" / "ra" is still being said. "ran" and "puppy" are finished words. */
+export function isIncompletePrefix(token: string, word: string): boolean {
+  const spoken = foldKidPronunciation(token);
+  const expected = foldKidPronunciation(word);
+  return spoken.length > 0 && spoken.length < expected.length && expected.startsWith(spoken);
 }
 
 /**
- * Turn a cumulative STT transcript into the newly spoken tokens to feed the aligner.
- * Growing interims apply only the delta. A sudden 4+ word dump is treated as one burst
- * so one spoken word cannot finish “The puppy ran down the hill.”
+ * Hold only a cut-off interim tail ("pu", "hil").
+ * A short word that already matches an upcoming page word ("the", "ran") is committed
+ * so a phrase can move the highlight as the child reads.
+ */
+export function shouldHoldInterimTail(token: string, upcoming: string[] = []): boolean {
+  if (!token || isFunctionWord(token)) return false;
+  if (token.length > 3) return false;
+  const finishesUpcoming = upcoming.some((word) => fuzzyMatch(token, word) && !isIncompletePrefix(token, word));
+  return !finishesUpcoming;
+}
+
+/**
+ * Turn a cumulative STT transcript into the newly spoken tokens.
+ * Growing interims apply only the delta, including every later word in the same phrase.
+ * The aligner still walks those words in order and will not skip ahead to an unmatched word.
  */
 export function consumeTranscript(
   cursor: TranscriptCursor,
   transcript: string,
   isFinal: boolean,
-  expected?: string,
+  upcoming: string[] = [],
 ): { nextCursor: TranscriptCursor; spoken: string[] } {
   const nextTokens = tokenizeTranscript(transcript);
   let stableTokens = nextTokens;
   if (!isFinal && nextTokens.length > 0) {
     const tail = nextTokens[nextTokens.length - 1] ?? "";
-    const tailMatchesExpected = Boolean(expected && fuzzyMatch(tail, expected));
-    if (shouldHoldInterimTail(tail) && !tailMatchesExpected) {
+    if (shouldHoldInterimTail(tail, upcoming)) {
       stableTokens = nextTokens.slice(0, -1);
     }
   }
 
-  let spoken = newTokensSince(cursor.tokens, stableTokens);
-  if (spoken.length >= SUDDEN_DUMP_TOKEN_THRESHOLD) {
-    spoken = firstSpokenBurst(spoken);
-  }
-
   return {
     nextCursor: isFinal ? emptyTranscriptCursor() : { tokens: stableTokens },
-    spoken,
+    spoken: newTokensSince(cursor.tokens, stableTokens),
   };
 }
 

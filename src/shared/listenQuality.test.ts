@@ -4,7 +4,7 @@ import { fuzzyMatch } from "./fuzzy.ts";
 import { legacyReplayChirpStream } from "./legacyChirpReplay.ts";
 import { createListenSession, trackLiveSpeech } from "./listenTracker.ts";
 import { kidSpeechVariants } from "./normalize.ts";
-import { consumeTranscript, emptyTranscriptCursor, firstSpokenBurst } from "./transcriptStream.ts";
+import { consumeTranscript, emptyTranscriptCursor } from "./transcriptStream.ts";
 import type { OcrWord } from "./types.ts";
 
 function word(text: string, lineIndex: number, id = text): OcrWord {
@@ -60,36 +60,72 @@ describe("baseline failures on main (documented, still true of the old path)", (
   });
 });
 
+const upcomingLine = ["the", "puppy", "ran", "down", "the", "hill", "then", "he"];
+
 describe("transcript streaming cursor", () => {
-  it("applies only new tokens from a growing Chirp transcript", () => {
-    const first = consumeTranscript(emptyTranscriptCursor(), "the", false);
+  it("applies every new token from a growing Chirp transcript", () => {
+    const first = consumeTranscript(emptyTranscriptCursor(), "the", false, upcomingLine);
     expect(first.spoken).toEqual(["the"]);
-    const second = consumeTranscript(first.nextCursor, "the puppy", false);
+    const second = consumeTranscript(first.nextCursor, "the puppy", false, upcomingLine);
     expect(second.spoken).toEqual(["puppy"]);
-    const dumped = consumeTranscript(second.nextCursor, "the puppy ran down the hill", true);
-    expect(dumped.spoken).toEqual(["ran"]);
-    expect(dumped.nextCursor.tokens).toEqual([]);
+    const phrase = consumeTranscript(second.nextCursor, "the puppy ran down the hill", true, upcomingLine);
+    expect(phrase.spoken).toEqual(["ran", "down", "the", "hill"]);
+    expect(phrase.nextCursor.tokens).toEqual([]);
   });
 
   it("holds a short unstable interim tail (partial word)", () => {
-    const held = consumeTranscript(emptyTranscriptCursor(), "pup", false);
+    const held = consumeTranscript(emptyTranscriptCursor(), "pup", false, upcomingLine);
     expect(held.spoken).toEqual([]);
-    const completed = consumeTranscript(held.nextCursor, "puppy", false);
+    const completed = consumeTranscript(held.nextCursor, "puppy", false, upcomingLine);
     expect(completed.spoken).toEqual(["puppy"]);
   });
 
-  it("treats a sudden full-line dump as one spoken burst", () => {
-    const dumped = consumeTranscript(emptyTranscriptCursor(), "the puppy ran down the hill", true);
-    expect(dumped.spoken).toEqual(firstSpokenBurst(["the", "puppy", "ran", "down", "the", "hill"]));
-    expect(dumped.spoken).toEqual(["the", "puppy"]);
+  it("commits a short word once it matches an upcoming page word", () => {
+    const phrase = consumeTranscript(emptyTranscriptCursor(), "the puppy ran", false, upcomingLine);
+    expect(phrase.spoken).toEqual(["the", "puppy", "ran"]);
+  });
+
+  it("applies every word of a continuous phrase", () => {
+    const phrase = consumeTranscript(emptyTranscriptCursor(), "the puppy ran down the hill", true, upcomingLine);
+    expect(phrase.spoken).toEqual(["the", "puppy", "ran", "down", "the", "hill"]);
   });
 });
 
 describe("live mic → Chirp frames → word tracker", () => {
-  it("does not finish the line when Chirp replays a growing transcript", () => {
+  it("keeps up when Chirp grows a phrase into the whole first line", () => {
     const live = trackLiveSpeech(puppyPage, growingFirstLine);
-    expect(live.currentIndex).toBe(3);
-    expect(puppyPage[live.currentIndex]?.text).toBe("down");
+    expect(live.currentIndex).toBe(6);
+    expect(puppyPage[live.currentIndex]?.text).toBe("Then");
+  });
+
+  it("finishes the first line from one continuous phrase and stops there", () => {
+    const live = trackLiveSpeech(puppyPage, [
+      { transcript: "the puppy ran down the hill", isFinal: true },
+    ]);
+    expect(live.currentIndex).toBe(6);
+    expect(puppyPage[live.currentIndex]?.text).toBe("Then");
+  });
+
+  it("still applies the rest of a phrase after the first words were already heard", () => {
+    const session = createListenSession({ words: puppyPage, now: () => 0 });
+    expect(session.ingest("the puppy", true).currentIndex).toBe(2);
+    const rest = session.ingest("the puppy ran down the hill", true);
+    expect(rest.currentIndex).toBe(6);
+    expect(rest.failedAttempts).toBe(0);
+  });
+
+  it("does not jump when Chirp replays words already read", () => {
+    const session = createListenSession({ words: puppyPage, now: () => 0 });
+    session.ingest("the", true);
+    session.ingest("puppy", true);
+    session.ingest("ran", true);
+    session.ingest("down", true);
+    const replay = session.ingest("the puppy ran down", true);
+    expect(replay.currentIndex).toBe(4);
+    expect(puppyPage[replay.currentIndex]?.text).toBe("the");
+    expect(replay.failed).toBe(false);
+    const continued = session.ingest("the hill", true);
+    expect(continued.currentIndex).toBe(6);
   });
 
   it("still walks the page word by word", () => {

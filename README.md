@@ -199,7 +199,7 @@ public/fixtures  Sample workbook photo + mocked OCR JSON
 
 `npm test` (Vitest) is the internal microphone → Chirp → word-tracking suite. CI does not need a hardware mic. It covers:
 
-- **Aligner + live Chirp cursor** — growing interims, sudden full-line dumps, kid pronunciations, partial words, function-word skips, echo / doubled speech, and the stall ladder
+- **Aligner + live Chirp cursor** — growing interims, a continuous phrase that advances every matched word, kid pronunciations, partial words, function-word skips, echo / doubled speech, and the stall ladder
 - **Mic capture → PCM16 encode → STT client** — quiet / normal / loud RMS, noise floor + speech, mid-utterance pauses, overlapping tones, AudioWorklet 128-sample quanta
 - **STT session routing** — Chirp 3 / LINEAR16 / 16 kHz config; `{ type: "ready" }` vs `{ type: "mock" }`; no silent path when `gcpReady`
 
@@ -215,7 +215,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-That grants microphone permission, injects an oscillator, opens the reader, and checks the live level meter plus typed-word tracking (word-by-word, kid fold `da`, and a full-line dump that must not finish the sentence).
+That grants microphone permission, injects an oscillator, opens the reader, and checks the live level meter plus typed-word tracking (word-by-word, kid fold `da`, and a continuous phrase that moves through each matched word). A single later word still cannot skip the line.
 
 `npm run fixture` regenerates the sample page.
 
