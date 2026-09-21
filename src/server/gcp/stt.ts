@@ -32,13 +32,19 @@ export function openStreamingRecognize(
     const stream = openSpeechStream(clients.speech as v2.SpeechClient) as Duplex;
 
     stream.on("data", (response: {
+      speechEventType?: string | number | null;
       results?: Array<{
         isFinal?: boolean | null;
         stability?: number | null;
         alternatives?: Array<{ transcript?: string | null }>;
       }>;
     }) => {
-      for (const result of response.results ?? []) {
+      if (response.speechEventType != null && response.speechEventType !== 0) {
+        logStt("speech-event", { event: String(response.speechEventType) });
+      }
+      const results = response.results ?? [];
+      if (!results.length) return;
+      for (const result of results) {
         const transcript = result.alternatives?.[0]?.transcript?.trim();
         if (!transcript) continue;
         logStt("transcript", {

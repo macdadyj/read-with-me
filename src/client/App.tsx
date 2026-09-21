@@ -229,7 +229,7 @@ export function App() {
     [applySnapshot],
   );
 
-  const { micState, rms, pause, resume } = useMicStream({
+  const { micState, rms, pause, resume, prime } = useMicStream({
     enabled: readerLive && !scriptedDemo,
     phrases: words.map((word) => word.text),
     onTokens: (tokens, isFinal) => {
@@ -315,6 +315,7 @@ export function App() {
   }
 
   async function onConfirm() {
+    prime();
     setBusy(true);
     try {
       if (pendingFile) {

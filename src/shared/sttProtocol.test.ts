@@ -24,6 +24,7 @@ describe("STT protocol", () => {
     const config = chirpStreamingConfig();
     expect(config.config.model).toBe("chirp_3");
     expect(config.streamingFeatures.interimResults).toBe(true);
+    expect(config.streamingFeatures.endpointingSensitivity).toBe("ENDPOINTING_SENSITIVITY_SUPERSHORT");
     expect(liveSpeechPath(true, true)).toBe("recognize");
     expect(liveSpeechPath(true, false)).toBe("mock");
   });
