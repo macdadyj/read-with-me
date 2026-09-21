@@ -40,8 +40,9 @@ export type OcrResult = {
 export type ReadingWord = OcrWord & { readingIndex: number };
 
 export type AlignerEvent =
-  | { type: "advance"; toIndex: number; via: "match" | "skip-function" | "snap-forward" | "coach-release" }
+  | { type: "advance"; toIndex: number; via: "match" | "skip-function" | "coach-release" }
   | { type: "repeat-previous" }
+  | { type: "echo" }
   | { type: "mismatch"; spoken: string; expected: string };
 
 export type AlignerResult = {

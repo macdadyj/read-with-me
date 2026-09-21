@@ -53,10 +53,18 @@ describe("aligner", () => {
     );
   });
 
-  it("snaps forward on the same line", () => {
+  it("does not snap across the rest of the line when a later word is spoken", () => {
     const result = applySpokenTokens(page, 2, ["hill"]);
-    expect(result.currentIndex).toBe(6);
-    expect(result.events.some((event) => event.type === "advance" && event.via === "snap-forward")).toBe(
+    expect(result.currentIndex).toBe(2);
+    expect(result.failed).toBe(true);
+    expect(result.events.some((event) => event.type === "advance")).toBe(false);
+  });
+
+  it("treats parent/child doubled words as echo instead of a mismatch", () => {
+    const result = applySpokenTokens(page, 2, ["the", "puppy"]);
+    expect(result.currentIndex).toBe(2);
+    expect(result.failed).toBe(false);
+    expect(result.events.some((event) => event.type === "echo" || event.type === "repeat-previous")).toBe(
       true,
     );
   });

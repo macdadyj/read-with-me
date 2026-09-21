@@ -11,6 +11,7 @@ type TransportState = "idle" | "listening" | "paused" | "error" | "permission-de
 type Options = {
   onTokens: (tokens: string[], isFinal: boolean) => void;
   enabled: boolean;
+  phrases?: string[];
 };
 
 type Session = {
@@ -64,7 +65,7 @@ function openSttSocket(): Promise<WebSocket> {
   });
 }
 
-export function useMicStream({ onTokens, enabled }: Options): {
+export function useMicStream({ onTokens, enabled, phrases = [] }: Options): {
   micState: MicState;
   rms: number;
   start: () => Promise<void>;
@@ -81,6 +82,8 @@ export function useMicStream({ onTokens, enabled }: Options): {
   const startIdRef = useRef(0);
   const onTokensRef = useRef(onTokens);
   onTokensRef.current = onTokens;
+  const phrasesRef = useRef(phrases);
+  phrasesRef.current = phrases;
 
   const setTransport = useCallback((transport: TransportState, nextRms = 0) => {
     transportRef.current = transport;
@@ -199,6 +202,9 @@ export function useMicStream({ onTokens, enabled }: Options): {
         media.getTracks().forEach((track) => track.stop());
         await context.close().catch(() => undefined);
         return;
+      }
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: "start", phrases: phrasesRef.current }));
       }
 
       const source = context.createMediaStreamSource(media);

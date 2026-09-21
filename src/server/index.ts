@@ -11,9 +11,11 @@ import { env } from "./env.ts";
 import { getClients } from "./gcp/clients.ts";
 import { generateHint } from "./gcp/gemini.ts";
 import { loadFixtureOcr, ocrImage } from "./gcp/ocr.ts";
+import { parseSttControlMessage } from "../shared/sttProtocol.ts";
 import { audioToRecognizeRequest, openStreamingRecognize } from "./gcp/stt.ts";
 import { synthesizeSpeech } from "./gcp/tts.ts";
 import { logStt } from "./log.ts";
+import { createSttAudioRouter, greetingForClients } from "./sttSession.ts";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -111,49 +113,61 @@ const wss = new WebSocketServer({ server, path: "/api/stt-stream" });
 
 wss.on("connection", (socket) => {
   const sessionId = randomUUID();
-  let frames = 0;
-  let bytes = 0;
-  let recognize = openStreamingRecognize(
-    (frame) => {
-      socket.send(JSON.stringify({ type: "transcript", sessionId, ...frame }));
-    },
-    (error) => {
-      logStt("stream-error", { sessionId, name: error.name });
-      socket.send(
-        JSON.stringify({
-          type: "error",
-          message: "Speech stream paused. You can still type a word.",
-        }),
-      );
-    },
-  );
+  const clients = getClients();
+  let recognize = clients.ready && clients.speech
+    ? openStreamingRecognize(
+        (frame) => {
+          socket.send(JSON.stringify({ type: "transcript", sessionId, ...frame }));
+        },
+        (error) => {
+          logStt("stream-error", { sessionId, name: error.name });
+          socket.send(
+            JSON.stringify({
+              type: "error",
+              message: "Speech stream paused. You can still type a word.",
+            }),
+          );
+        },
+      )
+    : null;
 
-  if (!recognize) {
+  const greeting = greetingForClients(sessionId, clients.ready, Boolean(recognize));
+  if (greeting.type === "mock") {
     logStt("mock", { sessionId });
-    socket.send(
-      JSON.stringify({
-        type: "mock",
-        sessionId,
-        message: "Live speech is in mock mode. Type a word to follow along.",
-      }),
-    );
   } else {
     logStt("ready", { sessionId });
-    socket.send(JSON.stringify({ type: "ready", sessionId }));
   }
+  socket.send(JSON.stringify(greeting));
+
+  const router = createSttAudioRouter({
+    path: greeting.type === "ready" ? "recognize" : "mock",
+    writer: recognize
+      ? {
+          write(request) {
+            recognize?.write(audioToRecognizeRequest(request.audio));
+            return true;
+          },
+          end() {
+            recognize?.end();
+          },
+        }
+      : null,
+  });
 
   socket.on("message", (raw, isBinary) => {
     if (!isBinary) {
-      try {
-        const parsed = JSON.parse(raw.toString()) as { type?: string };
-        if (parsed.type === "end") {
-          logStt("end", { sessionId, frames, bytes });
-          recognize?.end();
-          recognize = null;
-        }
-      } catch {
-        logStt("bad-control", { sessionId });
+      const control = parseSttControlMessage(raw.toString());
+      if (control?.type === "end") {
+        logStt("end", { sessionId, frames: router.frames(), bytes: router.bytes() });
+        router.close();
+        recognize = null;
+        return;
       }
+      if (control?.type === "start") {
+        logStt("start", { sessionId, phrases: control.phrases?.length ?? 0 });
+        return;
+      }
+      if (!control) logStt("bad-control", { sessionId });
       return;
     }
     const chunk = Buffer.isBuffer(raw)
@@ -161,19 +175,15 @@ wss.on("connection", (socket) => {
       : Array.isArray(raw)
         ? Buffer.concat(raw)
         : Buffer.from(raw as ArrayBuffer);
-    frames += 1;
-    bytes += chunk.byteLength;
-    if (frames === 1 || frames % 50 === 0) {
-      logStt("audio", { sessionId, frames, bytes });
-    }
-    if (recognize) {
-      recognize.write(audioToRecognizeRequest(chunk));
+    const routed = router.writeAudio(chunk);
+    if (router.frames() === 1 || router.frames() % 50 === 0) {
+      logStt("audio", { sessionId, frames: router.frames(), bytes: router.bytes(), routed });
     }
   });
 
   socket.on("close", () => {
-    logStt("close", { sessionId, frames, bytes });
-    recognize?.end();
+    logStt("close", { sessionId, frames: router.frames(), bytes: router.bytes() });
+    router.close();
   });
 });
 

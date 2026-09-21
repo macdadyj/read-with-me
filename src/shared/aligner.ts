@@ -2,10 +2,21 @@ import { fuzzyMatch } from "./fuzzy.ts";
 import { isFunctionWord, tokenizeTranscript } from "./normalize.ts";
 import type { AlignerEvent, AlignerResult, OcrWord, ReadingWord } from "./types.ts";
 
+const ECHO_WINDOW = 3;
+
 export function toReadingWords(words: OcrWord[]): ReadingWord[] {
   return words
     .filter((word) => !word.skip)
     .map((word, readingIndex) => ({ ...word, readingIndex }));
+}
+
+function isEchoOfRecent(token: string, words: ReadingWord[], index: number): boolean {
+  const start = Math.max(0, index - ECHO_WINDOW);
+  for (let i = start; i < index; i += 1) {
+    const previous = words[i];
+    if (previous && fuzzyMatch(token, previous.text)) return true;
+  }
+  return false;
 }
 
 export function applySpokenTokens(
@@ -38,26 +49,14 @@ export function applySpokenTokens(
       continue;
     }
 
-    const line = current.lineIndex;
-    let snapTo = -1;
-    for (let i = index + 1; i < words.length; i += 1) {
-      const candidate = words[i];
-      if (!candidate || candidate.lineIndex !== line) break;
-      if (fuzzyMatch(token, candidate.text)) {
-        snapTo = i;
-        break;
-      }
-    }
-    if (snapTo >= 0) {
-      index = snapTo + 1;
-      matched = true;
-      events.push({ type: "advance", toIndex: index, via: "snap-forward" });
-      continue;
-    }
-
     const previous = index > 0 ? words[index - 1] : undefined;
     if (previous && fuzzyMatch(token, previous.text)) {
       events.push({ type: "repeat-previous" });
+      continue;
+    }
+
+    if (isEchoOfRecent(token, words, index)) {
+      events.push({ type: "echo" });
       continue;
     }
 
