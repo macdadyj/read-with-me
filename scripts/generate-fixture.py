@@ -21,6 +21,36 @@ READING_LINES = [
     "He was a happy little dog.",
 ]
 
+EXTRA_PAGES = [
+    {
+        "stem": "cat",
+        "title": "The Cat Page",
+        "footer": "Read With Me  ·  cat practice page",
+        "lines": [
+            "The cat sat on a mat.",
+            "She had a red hat.",
+        ],
+    },
+    {
+        "stem": "frog",
+        "title": "The Frog Page",
+        "footer": "Read With Me  ·  frog practice page",
+        "lines": [
+            "A frog can hop.",
+            "The frog sat on a log.",
+        ],
+    },
+    {
+        "stem": "bus",
+        "title": "The Bus Page",
+        "footer": "Read With Me  ·  bus practice page",
+        "lines": [
+            "The bus is big.",
+            "We ride the bus.",
+        ],
+    },
+]
+
 
 def load_font(path: str, size: int) -> ImageFont.FreeTypeFont:
     return ImageFont.truetype(path, size=size)
@@ -39,8 +69,7 @@ def word_box(draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, text: str,
     }
 
 
-def main() -> None:
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+def render_page(stem: str, title: str, footer: str, lines: list[str]) -> None:
     img = Image.new("RGB", (WIDTH, HEIGHT), "#f4ecd8")
     draw = ImageDraw.Draw(img)
 
@@ -59,7 +88,7 @@ def main() -> None:
     body_font = load_font(FONT_REG, 52)
     small_font = load_font(FONT_REG, 22)
 
-    draw.text((90, 68), "My Reading Page", font=title_font, fill="#5c4a32")
+    draw.text((90, 68), title, font=title_font, fill="#5c4a32")
     draw.text((90, 140), "Name:", font=label_font, fill="#7a6a52")
     draw.line([(190, 172), (520, 172)], fill="#7a6a52", width=2)
     draw.text((560, 140), "Date:", font=label_font, fill="#7a6a52")
@@ -82,14 +111,15 @@ def main() -> None:
         )
         word_id += 1
 
-    add_skip("My", word_box(draw, title_font, "My", (90, 68)), -1)
-    add_skip("Reading", word_box(draw, title_font, "Reading", (170, 68)), -1)
-    add_skip("Page", word_box(draw, title_font, "Page", (390, 68)), -1)
+    title_x = 90
+    for part in title.split(" "):
+        add_skip(part, word_box(draw, title_font, part, (title_x, 68)), -1)
+        title_x += int(draw.textlength(part + " ", font=title_font))
     add_skip("Name:", word_box(draw, label_font, "Name:", (90, 140)), -1)
     add_skip("Date:", word_box(draw, label_font, "Date:", (560, 140)), -1)
 
-    line_y = [420, 560, 700]
-    for line_index, (line, y) in enumerate(zip(READING_LINES, line_y, strict=True)):
+    line_y = [420, 560, 700, 840][: len(lines)]
+    for line_index, (line, y) in enumerate(zip(lines, line_y, strict=True)):
         x = 180
         parts = line.split(" ")
         for part in parts:
@@ -111,24 +141,33 @@ def main() -> None:
             gap = draw.textlength(" ", font=body_font)
             x += draw.textlength(part, font=body_font) + gap
 
-    draw.text((80, HEIGHT - 56), "Read With Me  ·  sample workbook page", font=small_font, fill="#9a8b70")
+    draw.text((80, HEIGHT - 56), footer, font=small_font, fill="#9a8b70")
 
-    png_path = OUT_DIR / "workbook.png"
+    png_name = "workbook.png" if stem == "puppy" else f"{stem}.png"
+    json_name = "workbook.ocr.json" if stem == "puppy" else f"{stem}.ocr.json"
+    png_path = OUT_DIR / png_name
     img.save(png_path, "PNG")
 
     payload = {
         "source": "fixture",
         "imageWidth": WIDTH,
         "imageHeight": HEIGHT,
-        "imageUrl": "/fixtures/workbook.png",
-        "lines": [{"index": i, "text": line} for i, line in enumerate(READING_LINES)],
+        "imageUrl": f"/fixtures/{png_name}",
+        "lines": [{"index": i, "text": line} for i, line in enumerate(lines)],
         "words": words,
     }
-    json_path = OUT_DIR / "workbook.ocr.json"
+    json_path = OUT_DIR / json_name
     json_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {png_path}")
     print(f"wrote {json_path}")
     print("reading words:", [w["text"] for w in words if not w["skip"]])
+
+
+def main() -> None:
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    render_page("puppy", "My Reading Page", "Read With Me  ·  sample workbook page", READING_LINES)
+    for page in EXTRA_PAGES:
+        render_page(page["stem"], page["title"], page["footer"], page["lines"])
 
 
 if __name__ == "__main__":

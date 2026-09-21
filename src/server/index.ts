@@ -6,6 +6,7 @@ import cors from "cors";
 import express from "express";
 import multer from "multer";
 import { WebSocketServer } from "ws";
+import { isSamplePageId } from "../shared/samplePages.ts";
 import { assertNever, type HintRequest } from "../shared/types.ts";
 import { env } from "./env.ts";
 import { getClients } from "./gcp/clients.ts";
@@ -43,9 +44,14 @@ app.get("/api/config", (_req, res) => {
   });
 });
 
-app.get("/api/ocr/fixture", async (_req, res) => {
+app.get("/api/ocr/fixture", async (req, res) => {
+  const id = typeof req.query.id === "string" && req.query.id ? req.query.id : "puppy";
+  if (!isSamplePageId(id)) {
+    res.status(400).json({ error: "Unknown practice page." });
+    return;
+  }
   try {
-    const result = await loadFixtureOcr();
+    const result = await loadFixtureOcr(id);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: "Fixture missing", detail: String(error) });

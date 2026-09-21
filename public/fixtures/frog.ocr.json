@@ -1,0 +1,223 @@
+{
+  "source": "fixture",
+  "imageWidth": 1080,
+  "imageHeight": 1440,
+  "imageUrl": "/fixtures/frog.png",
+  "lines": [
+    {
+      "index": 0,
+      "text": "A frog can hop."
+    },
+    {
+      "index": 1,
+      "text": "The frog sat on a log."
+    }
+  ],
+  "words": [
+    {
+      "id": "skip-0",
+      "text": "The",
+      "normalized": "the",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.07222222222222222,
+        "y": 0.04861111111111111,
+        "width": 0.09351851851851851,
+        "height": 0.03819444444444445
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-1",
+      "text": "Frog",
+      "normalized": "frog",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.1527777777777778,
+        "y": 0.049305555555555554,
+        "width": 0.10925925925925926,
+        "height": 0.044444444444444446
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-2",
+      "text": "Page",
+      "normalized": "page",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.2490740740740741,
+        "y": 0.049305555555555554,
+        "width": 0.1175925925925926,
+        "height": 0.044444444444444446
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-3",
+      "text": "Name:",
+      "normalized": "name",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.07222222222222222,
+        "y": 0.09583333333333334,
+        "width": 0.10185185185185185,
+        "height": 0.030555555555555555
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-4",
+      "text": "Date:",
+      "normalized": "date",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.5074074074074074,
+        "y": 0.09583333333333334,
+        "width": 0.08703703703703704,
+        "height": 0.030555555555555555
+      },
+      "skip": true
+    },
+    {
+      "id": "w-5",
+      "text": "A",
+      "display": "A",
+      "normalized": "a",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.15555555555555556,
+        "y": 0.29583333333333334,
+        "width": 0.053703703703703705,
+        "height": 0.043055555555555555
+      },
+      "skip": false
+    },
+    {
+      "id": "w-6",
+      "text": "frog",
+      "display": "frog",
+      "normalized": "frog",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.1988425925925926,
+        "y": 0.29375,
+        "width": 0.11666666666666667,
+        "height": 0.05416666666666667
+      },
+      "skip": false
+    },
+    {
+      "id": "w-7",
+      "text": "can",
+      "display": "can",
+      "normalized": "can",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.30557002314814813,
+        "y": 0.3020833333333333,
+        "width": 0.10185185185185185,
+        "height": 0.0375
+      },
+      "skip": false
+    },
+    {
+      "id": "w-8",
+      "text": "hop",
+      "display": "hop.",
+      "normalized": "hop",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.39796006944444445,
+        "y": 0.29444444444444445,
+        "width": 0.12407407407407407,
+        "height": 0.05347222222222222
+      },
+      "skip": false
+    },
+    {
+      "id": "w-9",
+      "text": "The",
+      "display": "The",
+      "normalized": "the",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.15555555555555556,
+        "y": 0.39166666666666666,
+        "width": 0.10555555555555556,
+        "height": 0.04513888888888889
+      },
+      "skip": false
+    },
+    {
+      "id": "w-10",
+      "text": "frog",
+      "display": "frog",
+      "normalized": "frog",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.2517505787037037,
+        "y": 0.3909722222222222,
+        "width": 0.11666666666666667,
+        "height": 0.05416666666666667
+      },
+      "skip": false
+    },
+    {
+      "id": "w-11",
+      "text": "sat",
+      "display": "sat",
+      "normalized": "sat",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.35847800925925927,
+        "y": 0.3951388888888889,
+        "width": 0.08981481481481482,
+        "height": 0.041666666666666664
+      },
+      "skip": false
+    },
+    {
+      "id": "w-12",
+      "text": "on",
+      "display": "on",
+      "normalized": "on",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.43844039351851855,
+        "y": 0.3993055555555556,
+        "width": 0.08148148148148149,
+        "height": 0.0375
+      },
+      "skip": false
+    },
+    {
+      "id": "w-13",
+      "text": "a",
+      "display": "a",
+      "normalized": "a",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.5098379629629629,
+        "y": 0.3993055555555556,
+        "width": 0.049074074074074076,
+        "height": 0.0375
+      },
+      "skip": false
+    },
+    {
+      "id": "w-14",
+      "text": "log",
+      "display": "log.",
+      "normalized": "log",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.5493634259259259,
+        "y": 0.39166666666666666,
+        "width": 0.10648148148148148,
+        "height": 0.05347222222222222
+      },
+      "skip": false
+    }
+  ]
+}

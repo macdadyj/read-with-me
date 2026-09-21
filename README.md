@@ -47,7 +47,7 @@ npm run dev
 
 Open `http://localhost:5173`.
 
-- **Use the sample page** loads `public/fixtures/workbook.png` plus mocked OCR JSON.
+- **Practice pages** on the home screen: the puppy, the cat, the frog, and the bus. Each opens a printed page you can read word by word.
 - **Type a word to pretend you said it** drives the real aligner.
 - **Play the demo** runs the script below.
 - Without Application Default Credentials the API stays in mock mode: fixture OCR, local hints, browser `speechSynthesis` if Cloud TTS returns 204.

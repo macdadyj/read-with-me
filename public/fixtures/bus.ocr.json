@@ -1,0 +1,195 @@
+{
+  "source": "fixture",
+  "imageWidth": 1080,
+  "imageHeight": 1440,
+  "imageUrl": "/fixtures/bus.png",
+  "lines": [
+    {
+      "index": 0,
+      "text": "The bus is big."
+    },
+    {
+      "index": 1,
+      "text": "We ride the bus."
+    }
+  ],
+  "words": [
+    {
+      "id": "skip-0",
+      "text": "The",
+      "normalized": "the",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.07222222222222222,
+        "y": 0.04861111111111111,
+        "width": 0.09351851851851851,
+        "height": 0.03819444444444445
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-1",
+      "text": "Bus",
+      "normalized": "bus",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.1527777777777778,
+        "y": 0.049305555555555554,
+        "width": 0.09351851851851851,
+        "height": 0.0375
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-2",
+      "text": "Page",
+      "normalized": "page",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.23333333333333334,
+        "y": 0.049305555555555554,
+        "width": 0.1175925925925926,
+        "height": 0.044444444444444446
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-3",
+      "text": "Name:",
+      "normalized": "name",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.07222222222222222,
+        "y": 0.09583333333333334,
+        "width": 0.10185185185185185,
+        "height": 0.030555555555555555
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-4",
+      "text": "Date:",
+      "normalized": "date",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.5074074074074074,
+        "y": 0.09583333333333334,
+        "width": 0.08703703703703704,
+        "height": 0.030555555555555555
+      },
+      "skip": true
+    },
+    {
+      "id": "w-5",
+      "text": "The",
+      "display": "The",
+      "normalized": "the",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.15555555555555556,
+        "y": 0.29444444444444445,
+        "width": 0.10555555555555556,
+        "height": 0.04513888888888889
+      },
+      "skip": false
+    },
+    {
+      "id": "w-6",
+      "text": "bus",
+      "display": "bus",
+      "normalized": "bus",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.2517505787037037,
+        "y": 0.29444444444444445,
+        "width": 0.10462962962962963,
+        "height": 0.04513888888888889
+      },
+      "skip": false
+    },
+    {
+      "id": "w-7",
+      "text": "is",
+      "display": "is",
+      "normalized": "is",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.3467013888888889,
+        "y": 0.2951388888888889,
+        "width": 0.05740740740740741,
+        "height": 0.044444444444444446
+      },
+      "skip": false
+    },
+    {
+      "id": "w-8",
+      "text": "big",
+      "display": "big.",
+      "normalized": "big",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.39470486111111114,
+        "y": 0.29444444444444445,
+        "width": 0.10648148148148148,
+        "height": 0.05347222222222222
+      },
+      "skip": false
+    },
+    {
+      "id": "w-9",
+      "text": "We",
+      "display": "We",
+      "normalized": "we",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.15555555555555556,
+        "y": 0.39305555555555555,
+        "width": 0.09351851851851851,
+        "height": 0.04375
+      },
+      "skip": false
+    },
+    {
+      "id": "w-10",
+      "text": "ride",
+      "display": "ride",
+      "normalized": "ride",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.2390335648148148,
+        "y": 0.39166666666666666,
+        "width": 0.1111111111111111,
+        "height": 0.04513888888888889
+      },
+      "skip": false
+    },
+    {
+      "id": "w-11",
+      "text": "the",
+      "display": "the",
+      "normalized": "the",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.340625,
+        "y": 0.39166666666666666,
+        "width": 0.0962962962962963,
+        "height": 0.04513888888888889
+      },
+      "skip": false
+    },
+    {
+      "id": "w-12",
+      "text": "bus",
+      "display": "bus.",
+      "normalized": "bus",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.42743055555555554,
+        "y": 0.39166666666666666,
+        "width": 0.1175925925925926,
+        "height": 0.04513888888888889
+      },
+      "skip": false
+    }
+  ]
+}
