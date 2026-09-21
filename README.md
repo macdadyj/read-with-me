@@ -34,7 +34,7 @@ Stages:
 
 **Help** always advances one stage immediately. Copy is encouraging: “almost,” never “wrong.”
 
-The aligner is word-based and fuzzy (Levenshtein + common kid pronunciations). It can skip one tiny function word, snap forward on the same line, and will not snap backward more than one token.
+The aligner is word-based and fuzzy (Levenshtein + common kid pronunciations). It can skip one tiny function word (`The` → `puppy`) and will not snap backward. It does **not** jump ahead to later words on the same line.
 
 ## Local demo (no camera, no mic, no GCP)
 
@@ -47,7 +47,8 @@ npm run dev
 
 Open `http://localhost:5173`.
 
-- **Use the sample page** loads `public/fixtures/workbook.png` plus mocked OCR JSON.
+- **Use the sample page** loads the puppy workbook (`public/fixtures/workbook.png`).
+- **The cat page** / **The frog page** are extra first-grade samples for tracking tests.
 - **Type a word to pretend you said it** drives the real aligner.
 - **Play the demo** runs the script below.
 - Without Application Default Credentials the API stays in mock mode: fixture OCR, local hints, browser `speechSynthesis` if Cloud TTS returns 204.
@@ -63,6 +64,12 @@ Open `http://localhost:5173`.
 
 Manual version of the same path: sample page → Start → type `the` → type `puppy` → wait on `ran` (or tap **Help**) → type `ran`.
 
+Saying only **puppy** should skip `The` and stop on **ran** — it must not finish the sentence. That oversensitive snap was a real bug: streaming Chirp sends a growing transcript, and the aligner used to replay every token and jump to later words on the same line (`the` / `hill`).
+
+`npm test` includes an aligner **training corpus** (`src/shared/alignerTraining.ts`) across the puppy, cat, and frog pages: one-word reads, kid folds (`da` → `the`), growing interims, and sudden full-line dumps. Help ladder behavior is unchanged.
+
+Vertex Gemini can optionally invent more kid pronunciations via `generateKidPronunciations` (used only when ADC is present). The checked-in cases do not need GCP.
+
 ## Architecture
 
 One Cloud Run service:
@@ -70,7 +77,7 @@ One Cloud Run service:
 - React + Vite UI (camera / mic via `getUserMedia`; **Web Speech is not the primary recognizer**)
 - Express API on the same origin
   - `POST /api/ocr` — Vision `DOCUMENT_TEXT_DETECTION` (Document AI if `DOCUMENT_AI_PROCESSOR` is set later)
-  - `GET /api/ocr/fixture` — sample workbook OCR
+  - `GET /api/ocr/fixture?id=puppy|cat|frog` — sample workbook OCR
   - `WS /api/stt-stream` — 16 kHz PCM16 → Speech-to-Text v2 `chirp_3`
   - `POST /api/hint` — Vertex Gemini, local pedagogue fallback
   - `POST /api/speak` — Cloud TTS (`en-US-Neural2-F` by default)

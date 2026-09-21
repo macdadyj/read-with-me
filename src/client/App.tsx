@@ -2,7 +2,9 @@ import { applySpokenTokens, releaseAfterCoach, toReadingWords } from "@shared/al
 import { COPY, celebrateLine } from "@shared/copy";
 import { hintFromLevel } from "@shared/hints";
 import { tokenizeTranscript } from "@shared/normalize";
+import { samplePageById } from "@shared/samplePages";
 import { escalateStall, isHintLevel, nextStallLevel, stallLevelForElapsed } from "@shared/stall";
+import { consumeTranscript, emptyTranscriptCursor } from "@shared/transcriptStream";
 import { GCP_LOCATION, GCP_PROJECT_ID } from "@shared/gcp";
 import type { AppConfig, HintResponse, OcrResult, PaceMode, ReadingWord, StallLevel } from "@shared/types";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -60,7 +62,7 @@ export function App() {
   const stallArmedRef = useRef(false);
   const demoAbortRef = useRef(false);
   const spokenLevelRef = useRef<StallLevel>(0);
-  const seenFinalsRef = useRef<string>("");
+  const transcriptCursorRef = useRef(emptyTranscriptCursor());
   const releaseTimerRef = useRef<number | null>(null);
 
   function clearReleaseTimer() {
@@ -87,7 +89,7 @@ export function App() {
     previousHintsRef.current = [];
     stallStartedRef.current = Date.now();
     spokenLevelRef.current = 0;
-    seenFinalsRef.current = "";
+    transcriptCursorRef.current = emptyTranscriptCursor();
     stallArmedRef.current = false;
     pauseStallRef.current = true;
     clearReleaseTimer();
@@ -225,10 +227,9 @@ export function App() {
   const { micState, rms, pause, resume } = useMicStream({
     enabled: readerLive && !scriptedDemo,
     onTokens: (tokens, isFinal) => {
-      const joined = tokens.join(" ").toLowerCase();
-      if (!isFinal && joined === seenFinalsRef.current) return;
-      if (isFinal) seenFinalsRef.current = joined;
-      onAligned(tokenizeTranscript(tokens.join(" ")));
+      const consumed = consumeTranscript(transcriptCursorRef.current, tokens.join(" "), isFinal);
+      transcriptCursorRef.current = consumed.nextCursor;
+      if (consumed.spoken.length) onAligned(consumed.spoken);
     },
   });
 
@@ -287,12 +288,13 @@ export function App() {
     setScreen("confirm");
   }
 
-  async function onUseSample() {
+  async function onUseSample(id = "puppy") {
     setBusy(true);
     try {
-      const result = await fetchFixture();
+      const sample = samplePageById(id);
+      const result = await fetchFixture(sample.id);
       setPendingFile(null);
-      setImageUrl(FIXTURE_IMAGE);
+      setImageUrl(sample.imageUrl);
       setOcr(result);
       setWarning(undefined);
       setScreen("confirm");
@@ -373,7 +375,7 @@ export function App() {
         reducedMotion={forceReduced}
         onToggleMotion={setForceReduced}
         onPickImage={(file) => void onPickImage(file)}
-        onUseSample={() => void onUseSample()}
+        onUseSample={(id) => void onUseSample(id)}
         onPlayDemo={() => void onPlayDemo()}
       />
     );

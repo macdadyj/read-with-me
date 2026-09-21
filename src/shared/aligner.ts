@@ -38,23 +38,6 @@ export function applySpokenTokens(
       continue;
     }
 
-    const line = current.lineIndex;
-    let snapTo = -1;
-    for (let i = index + 1; i < words.length; i += 1) {
-      const candidate = words[i];
-      if (!candidate || candidate.lineIndex !== line) break;
-      if (fuzzyMatch(token, candidate.text)) {
-        snapTo = i;
-        break;
-      }
-    }
-    if (snapTo >= 0) {
-      index = snapTo + 1;
-      matched = true;
-      events.push({ type: "advance", toIndex: index, via: "snap-forward" });
-      continue;
-    }
-
     const previous = index > 0 ? words[index - 1] : undefined;
     if (previous && fuzzyMatch(token, previous.text)) {
       events.push({ type: "repeat-previous" });

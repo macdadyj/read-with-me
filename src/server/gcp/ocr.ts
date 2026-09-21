@@ -19,8 +19,16 @@ function fixtureDir(): string {
   return candidates[0] ?? path.resolve(process.cwd(), "public/fixtures");
 }
 
-export async function loadFixtureOcr(): Promise<OcrResult> {
-  const jsonPath = path.join(fixtureDir(), "workbook.ocr.json");
+const FIXTURE_FILES: Record<string, string> = {
+  puppy: "workbook.ocr.json",
+  workbook: "workbook.ocr.json",
+  cat: "cat.ocr.json",
+  frog: "frog.ocr.json",
+};
+
+export async function loadFixtureOcr(id = "puppy"): Promise<OcrResult> {
+  const file = FIXTURE_FILES[id] ?? FIXTURE_FILES.puppy;
+  const jsonPath = path.join(fixtureDir(), file);
   const raw = await readFile(jsonPath, "utf8");
   return JSON.parse(raw) as OcrResult;
 }

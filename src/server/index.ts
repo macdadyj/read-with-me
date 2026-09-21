@@ -41,9 +41,10 @@ app.get("/api/config", (_req, res) => {
   });
 });
 
-app.get("/api/ocr/fixture", async (_req, res) => {
+app.get("/api/ocr/fixture", async (req, res) => {
   try {
-    const result = await loadFixtureOcr();
+    const id = typeof req.query.id === "string" ? req.query.id : "puppy";
+    const result = await loadFixtureOcr(id);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: "Fixture missing", detail: String(error) });

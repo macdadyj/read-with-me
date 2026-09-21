@@ -1,0 +1,251 @@
+{
+  "source": "fixture",
+  "imageWidth": 1080,
+  "imageHeight": 1440,
+  "imageUrl": "/fixtures/cat.png",
+  "lines": [
+    {
+      "index": 0,
+      "text": "The cat sat on a mat."
+    },
+    {
+      "index": 1,
+      "text": "Then the cat had a nap."
+    }
+  ],
+  "words": [
+    {
+      "id": "skip-0",
+      "text": "My",
+      "normalized": "my",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.07222222222222222,
+        "y": 0.049305555555555554,
+        "width": 0.08148148148148149,
+        "height": 0.044444444444444446
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-1",
+      "text": "Reading",
+      "normalized": "reading",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.14629629629629629,
+        "y": 0.04861111111111111,
+        "width": 0.1814814814814815,
+        "height": 0.04513888888888889
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-2",
+      "text": "Page",
+      "normalized": "page",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.35,
+        "y": 0.049305555555555554,
+        "width": 0.1175925925925926,
+        "height": 0.044444444444444446
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-3",
+      "text": "Name:",
+      "normalized": "name",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.07222222222222222,
+        "y": 0.09583333333333334,
+        "width": 0.10185185185185185,
+        "height": 0.030555555555555555
+      },
+      "skip": true
+    },
+    {
+      "id": "skip-4",
+      "text": "Date:",
+      "normalized": "date",
+      "lineIndex": -1,
+      "box": {
+        "x": 0.5074074074074074,
+        "y": 0.09583333333333334,
+        "width": 0.08703703703703704,
+        "height": 0.030555555555555555
+      },
+      "skip": true
+    },
+    {
+      "id": "w-5",
+      "text": "The",
+      "display": "The",
+      "normalized": "the",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.15555555555555556,
+        "y": 0.29444444444444445,
+        "width": 0.10555555555555556,
+        "height": 0.04513888888888889
+      },
+      "skip": false
+    },
+    {
+      "id": "w-6",
+      "text": "cat",
+      "display": "cat",
+      "normalized": "cat",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.2517505787037037,
+        "y": 0.29791666666666666,
+        "width": 0.08981481481481482,
+        "height": 0.041666666666666664
+      },
+      "skip": false
+    },
+    {
+      "id": "w-7",
+      "text": "sat",
+      "display": "sat",
+      "normalized": "sat",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.33175636574074074,
+        "y": 0.29791666666666666,
+        "width": 0.08981481481481482,
+        "height": 0.041666666666666664
+      },
+      "skip": false
+    },
+    {
+      "id": "w-8",
+      "text": "on",
+      "display": "on",
+      "normalized": "on",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.41171875,
+        "y": 0.3020833333333333,
+        "width": 0.08148148148148149,
+        "height": 0.0375
+      },
+      "skip": false
+    },
+    {
+      "id": "w-9",
+      "text": "a",
+      "display": "a",
+      "normalized": "a",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.48311631944444444,
+        "y": 0.3020833333333333,
+        "width": 0.049074074074074076,
+        "height": 0.0375
+      },
+      "skip": false
+    },
+    {
+      "id": "w-10",
+      "text": "mat",
+      "display": "mat.",
+      "normalized": "mat",
+      "lineIndex": 0,
+      "box": {
+        "x": 0.5226417824074074,
+        "y": 0.29791666666666666,
+        "width": 0.125,
+        "height": 0.041666666666666664
+      },
+      "skip": false
+    },
+    {
+      "id": "w-11",
+      "text": "Then",
+      "display": "Then",
+      "normalized": "then",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.15555555555555556,
+        "y": 0.39166666666666666,
+        "width": 0.1361111111111111,
+        "height": 0.04513888888888889
+      },
+      "skip": false
+    },
+    {
+      "id": "w-12",
+      "text": "the",
+      "display": "the",
+      "normalized": "the",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.28151041666666665,
+        "y": 0.39166666666666666,
+        "width": 0.0962962962962963,
+        "height": 0.04513888888888889
+      },
+      "skip": false
+    },
+    {
+      "id": "w-13",
+      "text": "cat",
+      "display": "cat",
+      "normalized": "cat",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.36831597222222223,
+        "y": 0.3951388888888889,
+        "width": 0.08981481481481482,
+        "height": 0.041666666666666664
+      },
+      "skip": false
+    },
+    {
+      "id": "w-14",
+      "text": "had",
+      "display": "had",
+      "normalized": "had",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.44832175925925927,
+        "y": 0.39166666666666666,
+        "width": 0.10833333333333334,
+        "height": 0.04513888888888889
+      },
+      "skip": false
+    },
+    {
+      "id": "w-15",
+      "text": "a",
+      "display": "a",
+      "normalized": "a",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.5472222222222223,
+        "y": 0.3993055555555556,
+        "width": 0.049074074074074076,
+        "height": 0.0375
+      },
+      "skip": false
+    },
+    {
+      "id": "w-16",
+      "text": "nap",
+      "display": "nap.",
+      "normalized": "nap",
+      "lineIndex": 1,
+      "box": {
+        "x": 0.5867476851851852,
+        "y": 0.3993055555555556,
+        "width": 0.12129629629629629,
+        "height": 0.04583333333333333
+      },
+      "skip": false
+    }
+  ]
+}

@@ -4,6 +4,7 @@ export const COPY = {
   takePicture: "Take a picture of the page",
   uploadPhoto: "Upload a photo",
   useSample: "Use the sample page",
+  tryASample: "Or try another sample page",
   playDemo: "Play the demo",
   thisIsTheText: "This is the text",
   retake: "Try another photo",

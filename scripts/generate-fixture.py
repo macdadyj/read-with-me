@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render a first-grade workbook page and emit matching OCR JSON."""
+"""Render first-grade workbook pages and emit matching OCR JSON."""
 
 from __future__ import annotations
 
@@ -14,11 +14,35 @@ OUT_DIR = Path(__file__).resolve().parents[1] / "public" / "fixtures"
 FONT_REG = "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf"
 FONT_BOLD = "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf"
 
-# Reading lines only — title / name / date are decorations the aligner skips.
-READING_LINES = [
-    "The puppy ran down the hill.",
-    "Then he sat in the sun.",
-    "He was a happy little dog.",
+PAGES = [
+    {
+        "stem": "workbook",
+        "title": "My Reading Page",
+        "caption": "Read With Me  ·  sample workbook page",
+        "lines": [
+            "The puppy ran down the hill.",
+            "Then he sat in the sun.",
+            "He was a happy little dog.",
+        ],
+    },
+    {
+        "stem": "cat",
+        "title": "My Reading Page",
+        "caption": "Read With Me  ·  the cat page",
+        "lines": [
+            "The cat sat on a mat.",
+            "Then the cat had a nap.",
+        ],
+    },
+    {
+        "stem": "frog",
+        "title": "My Reading Page",
+        "caption": "Read With Me  ·  the frog page",
+        "lines": [
+            "A frog can jump high.",
+            "The frog sat on a log.",
+        ],
+    },
 ]
 
 
@@ -39,19 +63,15 @@ def word_box(draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, text: str,
     }
 
 
-def main() -> None:
+def render_page(page: dict) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     img = Image.new("RGB", (WIDTH, HEIGHT), "#f4ecd8")
     draw = ImageDraw.Draw(img)
 
-    # Lined paper
     for y in range(210, HEIGHT - 80, 70):
         draw.line([(80, y), (WIDTH - 80, y)], fill="#d7c9a8", width=2)
 
-    # Margin rule
     draw.line([(150, 180), (150, HEIGHT - 70)], fill="#e8b4b4", width=3)
-
-    # Header band
     draw.rounded_rectangle([60, 48, WIDTH - 60, 250], radius=18, fill="#fffaf0", outline="#cbb892", width=2)
 
     title_font = load_font(FONT_BOLD, 42)
@@ -59,7 +79,7 @@ def main() -> None:
     body_font = load_font(FONT_REG, 52)
     small_font = load_font(FONT_REG, 22)
 
-    draw.text((90, 68), "My Reading Page", font=title_font, fill="#5c4a32")
+    draw.text((90, 68), page["title"], font=title_font, fill="#5c4a32")
     draw.text((90, 140), "Name:", font=label_font, fill="#7a6a52")
     draw.line([(190, 172), (520, 172)], fill="#7a6a52", width=2)
     draw.text((560, 140), "Date:", font=label_font, fill="#7a6a52")
@@ -89,7 +109,8 @@ def main() -> None:
     add_skip("Date:", word_box(draw, label_font, "Date:", (560, 140)), -1)
 
     line_y = [420, 560, 700]
-    for line_index, (line, y) in enumerate(zip(READING_LINES, line_y, strict=True)):
+    reading_lines: list[str] = page["lines"]
+    for line_index, (line, y) in enumerate(zip(reading_lines, line_y, strict=False)):
         x = 180
         parts = line.split(" ")
         for part in parts:
@@ -111,24 +132,30 @@ def main() -> None:
             gap = draw.textlength(" ", font=body_font)
             x += draw.textlength(part, font=body_font) + gap
 
-    draw.text((80, HEIGHT - 56), "Read With Me  ·  sample workbook page", font=small_font, fill="#9a8b70")
+    draw.text((80, HEIGHT - 56), page["caption"], font=small_font, fill="#9a8b70")
 
-    png_path = OUT_DIR / "workbook.png"
+    stem = page["stem"]
+    png_path = OUT_DIR / f"{stem}.png"
     img.save(png_path, "PNG")
 
     payload = {
         "source": "fixture",
         "imageWidth": WIDTH,
         "imageHeight": HEIGHT,
-        "imageUrl": "/fixtures/workbook.png",
-        "lines": [{"index": i, "text": line} for i, line in enumerate(READING_LINES)],
+        "imageUrl": f"/fixtures/{stem}.png",
+        "lines": [{"index": i, "text": line} for i, line in enumerate(reading_lines)],
         "words": words,
     }
-    json_path = OUT_DIR / "workbook.ocr.json"
+    json_path = OUT_DIR / f"{stem}.ocr.json"
     json_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     print(f"wrote {png_path}")
     print(f"wrote {json_path}")
-    print("reading words:", [w["text"] for w in words if not w["skip"]])
+    print("reading words:", [item["text"] for item in words if not item["skip"]])
+
+
+def main() -> None:
+    for page in PAGES:
+        render_page(page)
 
 
 if __name__ == "__main__":
