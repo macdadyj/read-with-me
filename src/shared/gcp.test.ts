@@ -26,3 +26,10 @@ describe("GCP defaults", () => {
     expect(speechApiEndpoint(GCP_SPEECH_LOCATION)).toBe("us-speech.googleapis.com");
   });
 });
+
+describe("session safety", () => {
+  it("does not store child audio by default", async () => {
+    const { env } = await import("../server/env.ts");
+    expect(env.saveSession).toBe(false);
+  });
+});

@@ -1,6 +1,11 @@
 import type { Duplex } from "node:stream";
 import type { v2 } from "@google-cloud/speech";
-import { audioChunkToRequest, openSpeechStream, speechApiEndpoint } from "../../shared/sttProtocol.ts";
+import {
+  audioChunkToRequest,
+  chirpStreamingConfig,
+  openSpeechStream,
+  speechApiEndpoint,
+} from "../../shared/sttProtocol.ts";
 import { env } from "../env.ts";
 import { logStt } from "../log.ts";
 import { getClients } from "./clients.ts";
@@ -54,23 +59,7 @@ export function openStreamingRecognize(
 
     stream.write({
       recognizer,
-      streamingConfig: {
-        config: {
-          explicitDecodingConfig: {
-            encoding: "LINEAR16",
-            sampleRateHertz: 16000,
-            audioChannelCount: 1,
-          },
-          languageCodes: ["en-US"],
-          model: "chirp_3",
-          features: {
-            enableAutomaticPunctuation: false,
-          },
-        },
-        streamingFeatures: {
-          interimResults: true,
-        },
-      },
+      streamingConfig: chirpStreamingConfig(),
     });
 
     logStt("open", { project, location, endpoint });

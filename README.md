@@ -197,7 +197,16 @@ src/shared     Aligner, stall ladder, phoneme hints, types
 public/fixtures  Sample workbook photo + mocked OCR JSON
 ```
 
-`npm test` (Vitest) covers the aligner, stall timings, and the **mic capture → PCM16 encode → STT client** path using a synthetic sine buffer (no real microphone). It asserts LINEAR16 frames are produced and a mock Speech-to-Text writer receives them.
+`npm test` (Vitest) is the internal microphone → Chirp → word-tracking suite. CI does not need a hardware mic. It covers:
+
+- **Aligner + live Chirp cursor** — growing interims, sudden full-line dumps, kid pronunciations, partial words, function-word skips, echo / doubled speech, and the stall ladder
+- **Mic capture → PCM16 encode → STT client** — quiet / normal / loud RMS, noise floor + speech, mid-utterance pauses, overlapping tones, AudioWorklet 128-sample quanta
+- **STT session routing** — Chirp 3 / LINEAR16 / 16 kHz config; `{ type: "ready" }` vs `{ type: "mock" }`; no silent path when `gcpReady`
+
+```bash
+npm test
+npm run test:watch
+```
 
 Optional Playwright (fake `MediaStream`, no hardware mic):
 
@@ -206,9 +215,13 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-That grants microphone permission, injects an oscillator, opens the reader, and checks the live level meter moves into a hearing state.
+That grants microphone permission, injects an oscillator, opens the reader, and checks the live level meter plus typed-word tracking (word-by-word, kid fold `da`, and a full-line dump that must not finish the sentence).
 
 `npm run fixture` regenerates the sample page.
+
+### After redeploy (Cloud Run)
+
+On https://read-with-me-mxso6rumia-uc.a.run.app : sample page → start → watch the console for `[read-with-me:mic] stt-ready` (not `stt-mock`). Say **the** / **puppy** one at a time; the highlight should land on **ran**, not jump to **hill** or **Then**. A quiet voice should still move the meter and advance. Pause still stops the stream.
 
 ### Mic diagnostics
 

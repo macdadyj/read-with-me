@@ -1,8 +1,8 @@
-import { applySpokenTokens, releaseAfterCoach, toReadingWords } from "@shared/aligner";
+import { toReadingWords } from "@shared/aligner";
 import { COPY, celebrateLine } from "@shared/copy";
 import { hintFromLevel } from "@shared/hints";
-import { tokenizeTranscript } from "@shared/normalize";
-import { escalateStall, isHintLevel, nextStallLevel, stallLevelForElapsed } from "@shared/stall";
+import { createListenSession, type ListenSession, type ListenSnapshot } from "@shared/listenTracker";
+import { isHintLevel, nextStallLevel } from "@shared/stall";
 import { GCP_LOCATION, GCP_PROJECT_ID } from "@shared/gcp";
 import type { AppConfig, HintResponse, OcrResult, PaceMode, ReadingWord, StallLevel } from "@shared/types";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -60,7 +60,7 @@ export function App() {
   const stallArmedRef = useRef(false);
   const demoAbortRef = useRef(false);
   const spokenLevelRef = useRef<StallLevel>(0);
-  const seenFinalsRef = useRef<string>("");
+  const sessionRef = useRef<ListenSession>(createListenSession({ now: () => Date.now() }));
   const releaseTimerRef = useRef<number | null>(null);
 
   function clearReleaseTimer() {
@@ -87,9 +87,11 @@ export function App() {
     previousHintsRef.current = [];
     stallStartedRef.current = Date.now();
     spokenLevelRef.current = 0;
-    seenFinalsRef.current = "";
+    sessionRef.current.reset();
     stallArmedRef.current = false;
     pauseStallRef.current = true;
+    sessionRef.current.setArmed(false);
+    sessionRef.current.setPaused(true);
     clearReleaseTimer();
   }, []);
 
@@ -143,6 +145,7 @@ export function App() {
     setStallLevel(level);
     stallLevelRef.current = level;
     spokenLevelRef.current = level;
+    sessionRef.current.markHintLevel(level);
     if (speak) {
       pauseStallRef.current = true;
       await speakCoach(nextHint.spoken);
@@ -154,7 +157,7 @@ export function App() {
       releaseTimerRef.current = window.setTimeout(() => {
         if (currentIndexRef.current !== heldIndex) return;
         if (currentIndexRef.current >= wordsRef.current.length) return;
-        const released = releaseAfterCoach(currentIndexRef.current);
+        const released = sessionRef.current.coachRelease();
         currentIndexRef.current = released.currentIndex;
         setCurrentIndex(released.currentIndex);
         previousHintsRef.current = [];
@@ -174,43 +177,39 @@ export function App() {
     }
   }, [finishPage, ocr]);
 
-  const onAligned = useCallback(
-    (tokens: string[]) => {
-      if (!tokens.length) return;
+  const applySnapshot = useCallback(
+    (snap: ListenSnapshot) => {
       const before = currentIndexRef.current;
       const beforeWord = wordsRef.current[before];
-      const result = applySpokenTokens(wordsRef.current, before, tokens);
-      currentIndexRef.current = result.currentIndex;
-      setCurrentIndex(result.currentIndex);
-      if (result.failed) {
-        const spoken = tokens[tokens.length - 1] ?? "";
-        setLastAttempt(spoken);
-        lastAttemptRef.current = spoken;
-        failedRef.current += 1;
-        setFailedAttempts(failedRef.current);
-        const escalated = escalateStall(stallLevelRef.current, failedRef.current);
-        if (escalated > stallLevelRef.current && isHintLevel(escalated)) {
-          void applyHint(escalated);
+      currentIndexRef.current = snap.currentIndex;
+      setCurrentIndex(snap.currentIndex);
+      setFailedAttempts(snap.failedAttempts);
+      failedRef.current = snap.failedAttempts;
+      setLastAttempt(snap.lastAttempt);
+      lastAttemptRef.current = snap.lastAttempt;
+      setStallLevel(snap.stallLevel);
+      stallLevelRef.current = snap.stallLevel;
+
+      if (snap.failed) {
+        if (snap.stallLevel > spokenLevelRef.current && isHintLevel(snap.stallLevel)) {
+          void applyHint(snap.stallLevel);
         } else {
           setCoachNote(COPY.almost);
         }
       }
-      if (result.matched) {
+      if (snap.matched) {
         clearReleaseTimer();
         stopSpeech();
         previousHintsRef.current = [];
         setHint(null);
-        setStallLevel(0);
-        stallLevelRef.current = 0;
         spokenLevelRef.current = 0;
-        failedRef.current = 0;
-        setFailedAttempts(0);
         stallStartedRef.current = Date.now();
-        if (result.currentIndex >= wordsRef.current.length) {
+        sessionRef.current.markAdvanced(Date.now());
+        if (snap.currentIndex >= wordsRef.current.length) {
           void finishPage();
           return;
         }
-        const afterWord = wordsRef.current[result.currentIndex];
+        const afterWord = wordsRef.current[snap.currentIndex];
         if (beforeWord && afterWord && beforeWord.lineIndex !== afterWord.lineIndex) {
           const totalLines = new Set(wordsRef.current.map((word) => word.lineIndex)).size;
           setCoachNote(celebrateLine(afterWord.lineIndex, totalLines));
@@ -222,29 +221,38 @@ export function App() {
     [applyHint, finishPage],
   );
 
+  const onAligned = useCallback(
+    (tokens: string[]) => {
+      if (!tokens.length) return;
+      applySnapshot(sessionRef.current.ingestTokens(tokens));
+    },
+    [applySnapshot],
+  );
+
   const { micState, rms, pause, resume } = useMicStream({
     enabled: readerLive && !scriptedDemo,
+    phrases: words.map((word) => word.text),
     onTokens: (tokens, isFinal) => {
-      const joined = tokens.join(" ").toLowerCase();
-      if (!isFinal && joined === seenFinalsRef.current) return;
-      if (isFinal) seenFinalsRef.current = joined;
-      onAligned(tokenizeTranscript(tokens.join(" ")));
+      applySnapshot(sessionRef.current.ingest(tokens.join(" "), isFinal));
     },
   });
+
+  useEffect(() => {
+    sessionRef.current.setPace(pace);
+  }, [pace]);
 
   useEffect(() => {
     if (!readerLive || micState === "paused") return;
     const timer = window.setInterval(() => {
       if (!stallArmedRef.current || pauseStallRef.current) return;
-      const elapsed = Date.now() - stallStartedRef.current;
-      const next = stallLevelForElapsed(elapsed, pace);
-      if (next > spokenLevelRef.current && isHintLevel(next)) {
-        spokenLevelRef.current = next;
-        void applyHint(next);
+      const snap = sessionRef.current.tick(Date.now());
+      if (snap.stallLevel > spokenLevelRef.current && isHintLevel(snap.stallLevel)) {
+        spokenLevelRef.current = snap.stallLevel;
+        void applyHint(snap.stallLevel);
       }
     }, 250);
     return () => window.clearInterval(timer);
-  }, [applyHint, micState, pace, readerLive]);
+  }, [applyHint, micState, readerLive]);
 
   const beginReading = useCallback(
     async (result: OcrResult, url: string, demo = false) => {
@@ -259,6 +267,8 @@ export function App() {
       wordsRef.current = reading;
       setImageUrl(url);
       resetTrack();
+      sessionRef.current.reset(reading);
+      sessionRef.current.setPace(pace);
       pauseStallRef.current = true;
       setScreen("reader");
       setScriptedDemo(demo);
@@ -269,12 +279,15 @@ export function App() {
         spokenLevelRef.current = 0;
         stallArmedRef.current = true;
         pauseStallRef.current = false;
+        sessionRef.current.markAdvanced(Date.now());
+        sessionRef.current.setArmed(true);
+        sessionRef.current.setPaused(false);
       };
       if (!demo) {
         void speakCoach(COPY.startAtTop).then(arm);
       }
     },
-    [resetTrack],
+    [pace, resetTrack],
   );
 
   async function onPickImage(file: File) {
@@ -337,6 +350,9 @@ export function App() {
       spokenLevelRef.current = 0;
       stallArmedRef.current = true;
       pauseStallRef.current = false;
+      sessionRef.current.markAdvanced(Date.now());
+      sessionRef.current.setArmed(true);
+      sessionRef.current.setPaused(false);
     });
     for (const step of DEMO_STEPS) {
       if (demoAbortRef.current) return;
@@ -409,16 +425,19 @@ export function App() {
       onHelp={onHelp}
       onPause={() => {
         pauseStallRef.current = true;
+        sessionRef.current.setPaused(true);
         pause();
       }}
       onResume={() => {
         pauseStallRef.current = false;
         stallStartedRef.current = Date.now();
+        sessionRef.current.setPaused(false);
+        sessionRef.current.markAdvanced(Date.now());
         void resume();
       }}
       onStartOver={goHome}
       onNextPage={goHome}
-      onTypedWord={(word) => onAligned(tokenizeTranscript(word))}
+      onTypedWord={(word) => applySnapshot(sessionRef.current.ingest(word, true))}
     />
   );
 }

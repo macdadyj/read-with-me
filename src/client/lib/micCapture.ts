@@ -2,6 +2,22 @@ import { STT_FLUSH_SAMPLES, STT_SAMPLE_RATE, audioChunkToRequest } from "@shared
 import { rmsFromFloat32 } from "./micLevel.ts";
 import { downsampleTo16k, floatTo16BitPcm } from "./pcm.ts";
 
+/** Quiet kid speech sits above the noise floor but below a comfortable Chirp level. */
+export const QUIET_SPEECH_MIN_RMS = 0.006;
+export const QUIET_SPEECH_MAX_RMS = 0.07;
+export const QUIET_TARGET_RMS = 0.22;
+export const QUIET_BOOST_MAX = 8;
+
+export function boostQuietSpeech(samples: Float32Array, rms = rmsFromFloat32(samples)): Float32Array {
+  if (rms < QUIET_SPEECH_MIN_RMS || rms > QUIET_SPEECH_MAX_RMS) return samples;
+  const gain = Math.min(QUIET_TARGET_RMS / rms, QUIET_BOOST_MAX);
+  const boosted = new Float32Array(samples.length);
+  for (let i = 0; i < samples.length; i += 1) {
+    boosted[i] = Math.max(-1, Math.min(1, (samples[i] ?? 0) * gain));
+  }
+  return boosted;
+}
+
 export type FrameSink = {
   send: (chunk: ArrayBuffer) => boolean;
 };
@@ -38,7 +54,7 @@ registerProcessor("${PCM_WORKLET_NAME}", PcmProcessor);
 
 export function encodeCaptureFrame(samples: Float32Array, inputSampleRate: number): EncodedFrame {
   const rms = rmsFromFloat32(samples);
-  const pcm = floatTo16BitPcm(downsampleTo16k(samples, inputSampleRate));
+  const pcm = floatTo16BitPcm(downsampleTo16k(boostQuietSpeech(samples, rms), inputSampleRate));
   return { pcm, rms, sampleCount: pcm.byteLength / 2 };
 }
 
@@ -93,7 +109,8 @@ export function createCapturePipeline(options: {
     push(samples: Float32Array) {
       stats.framesIn += 1;
       stats.lastRms = rmsFromFloat32(samples);
-      const down = downsampleTo16k(samples, options.inputSampleRate);
+      const boosted = boostQuietSpeech(samples, stats.lastRms);
+      const down = downsampleTo16k(boosted, options.inputSampleRate);
       const merged = new Float32Array(pending.length + down.length);
       merged.set(pending);
       merged.set(down, pending.length);
