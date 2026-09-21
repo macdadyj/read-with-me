@@ -52,6 +52,20 @@ Text: ${sample}`,
   return parsed?.replacements ?? null;
 }
 
+/** Optional Vertex pass to grow kid-speech variants. Local folds stay the CI source of truth. */
+export async function generateKidPronunciations(word: string): Promise<string[]> {
+  const text = await generateText(
+    `A child age 5-8 is reading the word "${word}" aloud.
+List 6 short spoken guesses a speech recognizer might hear (misreads, baby talk, dropped sounds).
+Return JSON only: {"variants":["..."]}.
+No IPA. No full sentences.`,
+  );
+  if (!text) return [];
+  const parsed = extractJson(text) as { variants?: unknown } | null;
+  if (!Array.isArray(parsed?.variants)) return [];
+  return parsed.variants.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+}
+
 export async function generateHint(request: HintRequest): Promise<HintResponse> {
   const fallback = localHint(request);
   const text = await generateText(

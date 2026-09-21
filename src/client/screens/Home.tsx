@@ -1,4 +1,5 @@
 import { COPY } from "@shared/copy";
+import { SAMPLE_PAGES } from "@shared/samplePages";
 import type { AppConfig } from "@shared/types";
 import { ChangeEvent, useRef } from "react";
 
@@ -7,7 +8,7 @@ type Props = {
   reducedMotion: boolean;
   onToggleMotion: (value: boolean) => void;
   onPickImage: (file: File) => void;
-  onUseSample: () => void;
+  onUseSample: (id?: string) => void;
   onPlayDemo: () => void;
 };
 
@@ -62,9 +63,19 @@ export function Home({ config, reducedMotion, onToggleMotion, onPickImage, onUse
       <button type="button" className="btn btn--ghost" onClick={() => uploadRef.current?.click()}>
         {COPY.uploadPhoto}
       </button>
-      <button type="button" className="btn btn--ghost" onClick={onUseSample}>
+      <button type="button" className="btn btn--ghost" onClick={() => onUseSample("puppy")}>
         {COPY.useSample}
       </button>
+
+      <p className="sample-label">{COPY.tryASample}</p>
+      <div className="sample-row">
+        {SAMPLE_PAGES.filter((page) => page.id !== "puppy").map((page) => (
+          <button key={page.id} type="button" className="btn btn--ghost sample-row__btn" onClick={() => onUseSample(page.id)}>
+            {page.button}
+          </button>
+        ))}
+      </div>
+
       <button type="button" className="btn btn--text" onClick={onPlayDemo}>
         {COPY.playDemo}
       </button>

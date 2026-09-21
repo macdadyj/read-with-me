@@ -23,8 +23,9 @@ export async function fetchConfig(): Promise<AppConfig> {
   }
 }
 
-export async function fetchFixture(): Promise<OcrResult> {
-  return readJson<OcrResult>(await fetch("/api/ocr/fixture"));
+export async function fetchFixture(id = "puppy"): Promise<OcrResult> {
+  const query = new URLSearchParams({ id });
+  return readJson<OcrResult>(await fetch(`/api/ocr/fixture?${query}`));
 }
 
 export async function ocrPhoto(blob: Blob): Promise<OcrResult> {

@@ -53,12 +53,11 @@ describe("aligner", () => {
     );
   });
 
-  it("snaps forward on the same line", () => {
+  it("does not snap forward to a later word on the same line", () => {
     const result = applySpokenTokens(page, 2, ["hill"]);
-    expect(result.currentIndex).toBe(6);
-    expect(result.events.some((event) => event.type === "advance" && event.via === "snap-forward")).toBe(
-      true,
-    );
+    expect(result.currentIndex).toBe(2);
+    expect(result.failed).toBe(true);
+    expect(result.events.some((event) => event.type === "advance")).toBe(false);
   });
 
   it("does not snap backward when the previous word is repeated", () => {

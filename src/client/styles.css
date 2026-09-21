@@ -144,6 +144,29 @@ h1 {
   color: var(--ink-soft);
 }
 
+.sample-label {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.sample-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.sample-row__btn {
+  min-height: 48px;
+}
+
+@media (min-width: 520px) {
+  .sample-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .crop-frame {
   position: absolute;
   border: 3px solid var(--moss);
