@@ -1,0 +1,54 @@
+# Deploy Read With Me to Cloud Run on montano-349204 (scale-to-zero).
+# gcloud builds submit --project=montano-349204 --config cloudbuild.yaml
+substitutions:
+  _SERVICE: read-with-me
+  _REGION: us-central1
+  _GCP_PROJECT_ID: montano-349204
+  _SERVICE_ACCOUNT: read-with-me@montano-349204.iam.gserviceaccount.com
+  _GCS_BUCKET: montano-349204-read-with-me
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --build-arg
+      - GCP_PROJECT_ID=${_GCP_PROJECT_ID}
+      - -t
+      - gcr.io/${_GCP_PROJECT_ID}/${_SERVICE}:$COMMIT_SHA
+      - -t
+      - gcr.io/${_GCP_PROJECT_ID}/${_SERVICE}:latest
+      - .
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - gcr.io/${_GCP_PROJECT_ID}/${_SERVICE}:$COMMIT_SHA
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - gcr.io/${_GCP_PROJECT_ID}/${_SERVICE}:latest
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --project=${_GCP_PROJECT_ID}
+      - --image=gcr.io/${_GCP_PROJECT_ID}/${_SERVICE}:$COMMIT_SHA
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --service-account=${_SERVICE_ACCOUNT}
+      - --port=8080
+      - --memory=1Gi
+      - --cpu=1
+      - --min-instances=0
+      - --max-instances=5
+      - --timeout=300
+      - --set-env-vars=GCP_PROJECT_ID=${_GCP_PROJECT_ID},REGION=${_REGION},GCP_LOCATION=${_REGION},SPEECH_LOCATION=us,GCS_BUCKET=gs://${_GCS_BUCKET},SAVE_SESSION=false
+
+images:
+  - gcr.io/${_GCP_PROJECT_ID}/${_SERVICE}:$COMMIT_SHA
+  - gcr.io/${_GCP_PROJECT_ID}/${_SERVICE}:latest
+
+options:
+  logging: CLOUD_LOGGING_ONLY
