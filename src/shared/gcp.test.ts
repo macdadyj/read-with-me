@@ -9,6 +9,7 @@ import {
   GCP_REGION,
   GCP_SPEECH_LOCATION,
   normalizeBucketName,
+  speechApiEndpoint,
 } from "./gcp.ts";
 
 describe("GCP defaults", () => {
@@ -22,5 +23,6 @@ describe("GCP defaults", () => {
     expect(GCS_BUCKET_URI).toBe("gs://montano-349204-read-with-me");
     expect(GCP_SPEECH_LOCATION).toBe("us");
     expect(normalizeBucketName("gs://montano-349204-read-with-me")).toBe("montano-349204-read-with-me");
+    expect(speechApiEndpoint(GCP_SPEECH_LOCATION)).toBe("us-speech.googleapis.com");
   });
 });

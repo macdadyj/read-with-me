@@ -41,6 +41,7 @@ The aligner is word-based and fuzzy (Levenshtein + common kid pronunciations). I
 ```bash
 npm install
 npm test
+npm run test:e2e
 npm run dev
 ```
 
@@ -196,4 +197,19 @@ src/shared     Aligner, stall ladder, phoneme hints, types
 public/fixtures  Sample workbook photo + mocked OCR JSON
 ```
 
-`npm test` covers the aligner and stall timings. `npm run fixture` regenerates the sample page.
+`npm test` (Vitest) covers the aligner, stall timings, and the **mic capture → PCM16 encode → STT client** path using a synthetic sine buffer (no real microphone). It asserts LINEAR16 frames are produced and a mock Speech-to-Text writer receives them.
+
+Optional Playwright (fake `MediaStream`, no hardware mic):
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
+
+That grants microphone permission, injects an oscillator, opens the reader, and checks the live level meter moves into a hearing state.
+
+`npm run fixture` regenerates the sample page.
+
+### Mic diagnostics
+
+While listening, the browser console logs `[read-with-me:mic]` events (`start`, `level`, `transcript` char counts, `stt-ready` / `stt-error`). Cloud Run logs `[read-with-me:stt]` with frame/byte counts only — never audio bytes or what the child said.

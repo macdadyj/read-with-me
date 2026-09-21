@@ -3,6 +3,7 @@ import { Storage } from "@google-cloud/storage";
 import { TextToSpeechClient } from "@google-cloud/text-to-speech";
 import { VertexAI } from "@google-cloud/vertexai";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
+import { speechApiEndpoint } from "../../shared/gcp.ts";
 import { env, gcpConfigured } from "../env.ts";
 
 export type GcpClients = {
@@ -38,7 +39,10 @@ export function getClients(): GcpClients {
       ready: true,
       mockMode: false,
       vision: new ImageAnnotatorClient({ projectId: env.project }),
-      speech: new v2.SpeechClient({ projectId: env.project }),
+      speech: new v2.SpeechClient({
+        projectId: env.project,
+        apiEndpoint: speechApiEndpoint(env.speechLocation),
+      }),
       tts: new TextToSpeechClient({ projectId: env.project }),
       vertex: new VertexAI({ project: env.project, location: env.location }),
       storage: new Storage({ projectId: env.project }),

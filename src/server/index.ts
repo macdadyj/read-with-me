@@ -13,6 +13,7 @@ import { generateHint } from "./gcp/gemini.ts";
 import { loadFixtureOcr, ocrImage } from "./gcp/ocr.ts";
 import { audioToRecognizeRequest, openStreamingRecognize } from "./gcp/stt.ts";
 import { synthesizeSpeech } from "./gcp/tts.ts";
+import { logStt } from "./log.ts";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -110,50 +111,68 @@ const wss = new WebSocketServer({ server, path: "/api/stt-stream" });
 
 wss.on("connection", (socket) => {
   const sessionId = randomUUID();
+  let frames = 0;
+  let bytes = 0;
   let recognize = openStreamingRecognize(
     (frame) => {
       socket.send(JSON.stringify({ type: "transcript", sessionId, ...frame }));
     },
     (error) => {
+      logStt("stream-error", { sessionId, name: error.name });
       socket.send(
         JSON.stringify({
           type: "error",
           message: "Speech stream paused. You can still type a word.",
-          detail: error.message,
         }),
       );
     },
   );
 
   if (!recognize) {
+    logStt("mock", { sessionId });
     socket.send(
       JSON.stringify({
         type: "mock",
+        sessionId,
         message: "Live speech is in mock mode. Type a word to follow along.",
       }),
     );
+  } else {
+    logStt("ready", { sessionId });
+    socket.send(JSON.stringify({ type: "ready", sessionId }));
   }
 
-  socket.on("message", (raw) => {
-    if (typeof raw === "string" || (raw instanceof Buffer && raw[0] === 0x7b)) {
+  socket.on("message", (raw, isBinary) => {
+    if (!isBinary) {
       try {
         const parsed = JSON.parse(raw.toString()) as { type?: string };
         if (parsed.type === "end") {
+          logStt("end", { sessionId, frames, bytes });
           recognize?.end();
           recognize = null;
         }
       } catch {
-        // binary audio
+        logStt("bad-control", { sessionId });
       }
       return;
     }
-    const chunk = Buffer.isBuffer(raw) ? raw : Buffer.from(raw as ArrayBuffer);
+    const chunk = Buffer.isBuffer(raw)
+      ? raw
+      : Array.isArray(raw)
+        ? Buffer.concat(raw)
+        : Buffer.from(raw as ArrayBuffer);
+    frames += 1;
+    bytes += chunk.byteLength;
+    if (frames === 1 || frames % 50 === 0) {
+      logStt("audio", { sessionId, frames, bytes });
+    }
     if (recognize) {
       recognize.write(audioToRecognizeRequest(chunk));
     }
   });
 
   socket.on("close", () => {
+    logStt("close", { sessionId, frames, bytes });
     recognize?.end();
   });
 });

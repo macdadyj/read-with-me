@@ -1,6 +1,8 @@
 import type { Duplex } from "node:stream";
 import type { v2 } from "@google-cloud/speech";
+import { audioChunkToRequest, openSpeechStream, speechApiEndpoint } from "../../shared/sttProtocol.ts";
 import { env } from "../env.ts";
+import { logStt } from "../log.ts";
 import { getClients } from "./clients.ts";
 
 export type TranscriptFrame = {
@@ -8,8 +10,6 @@ export type TranscriptFrame = {
   isFinal: boolean;
   stability?: number;
 };
-
-type StreamingRecognize = v2.SpeechClient["streamingRecognize"];
 
 export function openStreamingRecognize(
   onTranscript: (frame: TranscriptFrame) => void,
@@ -21,9 +21,10 @@ export function openStreamingRecognize(
   const project = env.project;
   const location = env.speechLocation;
   const recognizer = `projects/${project}/locations/${location}/recognizers/_`;
+  const endpoint = speechApiEndpoint(location);
 
   try {
-    const stream = (clients.speech as unknown as { streamingRecognize: StreamingRecognize }).streamingRecognize();
+    const stream = openSpeechStream(clients.speech as v2.SpeechClient) as Duplex;
 
     stream.on("data", (response: {
       results?: Array<{
@@ -35,6 +36,10 @@ export function openStreamingRecognize(
       for (const result of response.results ?? []) {
         const transcript = result.alternatives?.[0]?.transcript?.trim();
         if (!transcript) continue;
+        logStt("transcript", {
+          chars: transcript.length,
+          isFinal: Boolean(result.isFinal),
+        });
         onTranscript({
           transcript,
           isFinal: Boolean(result.isFinal),
@@ -42,7 +47,10 @@ export function openStreamingRecognize(
         });
       }
     });
-    stream.on("error", (error: Error) => onError(error));
+    stream.on("error", (error: Error) => {
+      logStt("error", { name: error.name, message: error.message.slice(0, 180) });
+      onError(error);
+    });
 
     stream.write({
       recognizer,
@@ -65,13 +73,15 @@ export function openStreamingRecognize(
       },
     });
 
-    return stream as unknown as Duplex;
+    logStt("open", { project, location, endpoint });
+    return stream;
   } catch (error) {
     onError(error instanceof Error ? error : new Error(String(error)));
     return null;
   }
 }
 
-export function audioToRecognizeRequest(chunk: Buffer): { audio: string } {
-  return { audio: chunk.toString("base64") };
+export function audioToRecognizeRequest(chunk: Buffer): { audio: Buffer } {
+  const { audio } = audioChunkToRequest(chunk);
+  return { audio: Buffer.from(audio) };
 }
