@@ -1,4 +1,13 @@
 import { STT_FLUSH_SAMPLES, STT_SAMPLE_RATE, audioChunkToRequest } from "@shared/sttProtocol";
+
+/** Kid voices are quiet; browser noise suppression often eats "the" / "puppy". */
+export const MIC_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
+  echoCancellation: true,
+  noiseSuppression: false,
+  autoGainControl: true,
+  channelCount: 1,
+  sampleRate: STT_SAMPLE_RATE,
+};
 import { rmsFromFloat32 } from "./micLevel.ts";
 import { downsampleTo16k, floatTo16BitPcm } from "./pcm.ts";
 

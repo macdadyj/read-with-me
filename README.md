@@ -221,7 +221,7 @@ That grants microphone permission, injects an oscillator, opens the reader, and 
 
 ### After redeploy (Cloud Run)
 
-On https://read-with-me-mxso6rumia-uc.a.run.app : sample page → start → watch the console for `[read-with-me:mic] stt-ready` (not `stt-mock`). Say **the** / **puppy** one at a time; the highlight should land on **ran**, not jump to **hill** or **Then**. A quiet voice should still move the meter and advance. Pause still stops the stream.
+On https://read-with-me-mxso6rumia-uc.a.run.app after this revision is deployed: sample page → **This is the text** (that click unlocks the AudioContext). Console should show `[read-with-me:mic] stt-ready` (not `stt-mock`). Say **The**, pause a beat, then **Puppy**. The badge should flip to “I hear you” and the highlight should move to **puppy**, then **ran**. Chirp is configured for one-word endpointing (`SUPERSHORT`). Pause still stops the stream.
 
 ### Mic diagnostics
 

@@ -101,6 +101,22 @@ describe("live mic → Chirp frames → word tracker", () => {
     expect(live.currentIndex).toBe(3);
   });
 
+  it("advances on isolated spoken The / Puppy interims (Chirp one-word utterances)", () => {
+    const session = createListenSession({ words: puppyPage, now: () => 0 });
+    expect(session.ingest("The", false).currentIndex).toBe(1);
+    expect(session.ingest("Puppy", false).currentIndex).toBe(2);
+    expect(puppyPage[session.snapshot().currentIndex]?.text).toBe("ran");
+  });
+
+  it("advances when SUPERSHORT endpointing delivers one-word finals", () => {
+    const live = trackLiveSpeech(puppyPage, [
+      { transcript: "The", isFinal: true },
+      { transcript: "Puppy", isFinal: true },
+    ]);
+    expect(live.currentIndex).toBe(2);
+    expect(live.matched).toBe(true);
+  });
+
   it("accepts kid pronunciation folds and phoneme-near matches", () => {
     expect(trackLiveSpeech(puppyPage, [{ transcript: "da", isFinal: true }]).currentIndex).toBe(1);
     expect(trackLiveSpeech(puppyPage, [{ transcript: "puppi", isFinal: true }]).currentIndex).toBe(2);
