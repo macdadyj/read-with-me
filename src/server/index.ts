@@ -15,6 +15,7 @@ import { loadFixtureOcr, ocrImage } from "./gcp/ocr.ts";
 import { classifySttSocketPayload } from "../shared/sttProtocol.ts";
 import { audioToRecognizeRequest, openStreamingRecognize } from "./gcp/stt.ts";
 import { synthesizeSpeech } from "./gcp/tts.ts";
+import { rejectBrotliContentEncoding } from "./contentEncoding.ts";
 import { logStt } from "./log.ts";
 import { createSttAudioRouter, greetingForClients } from "./sttSession.ts";
 
@@ -23,9 +24,10 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 });
 
-const app = express();
+export const app = express();
 app.disable("x-powered-by");
 app.use(cors({ origin: true }));
+app.use(rejectBrotliContentEncoding);
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_req, res) => {
@@ -193,9 +195,17 @@ wss.on("connection", (socket) => {
   });
 });
 
-server.listen(env.port, () => {
-  const clients = getClients();
-  console.log(
-    `Read With Me listening on :${env.port} (mockMode=${clients.mockMode}, project=${env.project || "unset"})`,
-  );
-});
+function startedAsEntrypoint(): boolean {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  return path.resolve(fileURLToPath(import.meta.url)) === path.resolve(entry);
+}
+
+if (startedAsEntrypoint()) {
+  server.listen(env.port, () => {
+    const clients = getClients();
+    console.log(
+      `Read With Me listening on :${env.port} (mockMode=${clients.mockMode}, project=${env.project || "unset"})`,
+    );
+  });
+}
