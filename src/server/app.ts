@@ -10,6 +10,7 @@ import { getClients } from "./gcp/clients.ts";
 import { generateHint } from "./gcp/gemini.ts";
 import { loadFixtureOcr, ocrImage } from "./gcp/ocr.ts";
 import { synthesizeSpeech } from "./gcp/tts.ts";
+import { rejectBrotliContentEncoding } from "./contentEncoding.ts";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -20,6 +21,7 @@ export function createApp(): express.Express {
   const app = express();
   app.disable("x-powered-by");
   app.use(cors({ origin: true }));
+  app.use(rejectBrotliContentEncoding);
   app.use(express.json({ limit: "1mb" }));
 
   app.get("/api/health", (_req, res) => {

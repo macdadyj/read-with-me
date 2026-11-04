@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { WebSocketServer } from "ws";
 import { assertNever } from "../shared/types.ts";
 import { classifySttSocketPayload } from "../shared/sttProtocol.ts";
@@ -10,7 +12,7 @@ import { audioToRecognizeRequest, openStreamingRecognize } from "./gcp/stt.ts";
 import { logStt } from "./log.ts";
 import { createSttAudioRouter, greetingForClients } from "./sttSession.ts";
 
-const app = createApp();
+export const app = createApp();
 const server = createServer(app);
 const wss = new WebSocketServer({ server, path: "/api/stt-stream" });
 
@@ -90,9 +92,17 @@ wss.on("connection", (socket) => {
   });
 });
 
-server.listen(env.port, () => {
-  const clients = getClients();
-  console.log(
-    `Read With Me listening on :${env.port} (mockMode=${clients.mockMode}, project=${env.project || "unset"})`,
-  );
-});
+function startedAsEntrypoint(): boolean {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  return path.resolve(fileURLToPath(import.meta.url)) === path.resolve(entry);
+}
+
+if (startedAsEntrypoint()) {
+  server.listen(env.port, () => {
+    const clients = getClients();
+    console.log(
+      `Read With Me listening on :${env.port} (mockMode=${clients.mockMode}, project=${env.project || "unset"})`,
+    );
+  });
+}
