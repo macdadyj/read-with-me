@@ -27,11 +27,15 @@ describe("practice pages", () => {
     expect(live.currentIndex).toBe(words.length);
   });
 
-  it.each(SAMPLE_PAGES)("$id does not finish the first line from one Chirp dump", (page) => {
+  it.each(SAMPLE_PAGES)("$id finishes the first line from one continuous phrase and does not skip ahead", (page) => {
     const words = toReadingWords(loadPage(page.id).words);
-    const firstLine = words.filter((word) => word.lineIndex === words[0]?.lineIndex).map((word) => word.normalized);
-    const live = trackLiveSpeech(words, [{ transcript: firstLine.join(" "), isFinal: true }]);
-    expect(live.currentIndex).toBeLessThan(firstLine.length);
-    expect(live.currentIndex).toBeGreaterThan(0);
+    const firstLine = words.filter((word) => word.lineIndex === words[0]?.lineIndex);
+    const live = trackLiveSpeech(words, [{ transcript: firstLine.map((word) => word.normalized).join(" "), isFinal: true }]);
+    expect(live.currentIndex).toBe(firstLine.length);
+    const later = words[firstLine.length + 1];
+    if (later) {
+      const skipped = trackLiveSpeech(words, [{ transcript: later.normalized, isFinal: true }]);
+      expect(skipped.currentIndex).toBeLessThan(firstLine.length);
+    }
   });
 });

@@ -22,13 +22,12 @@ test("word-by-word typing advances one highlight at a time", async ({ page }) =>
   await expect(page.locator("[aria-current=true]")).toHaveText(/ran/i);
 });
 
-test("a full-line dump does not finish the first sentence", async ({ page }) => {
+test("a continuous phrase advances through the first sentence", async ({ page }) => {
   await openReader(page);
   await expect(page.locator("[aria-current=true]")).toHaveText(/the/i, { timeout: 20_000 });
 
   await say(page, "the puppy ran down the hill");
-  await expect(page.locator("[aria-current=true]")).toHaveText(/ran/i);
-  await expect(page.locator("[aria-current=true]")).not.toHaveText(/then/i);
+  await expect(page.locator("[aria-current=true]")).toHaveText(/then/i);
 });
 
 test("kid fold da advances The without jumping the line", async ({ page }) => {

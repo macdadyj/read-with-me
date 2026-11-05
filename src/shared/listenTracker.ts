@@ -1,7 +1,6 @@
 import { applySpokenTokens, releaseAfterCoach, toReadingWords } from "./aligner.ts";
 import { escalateStall, isHintLevel, stallLevelForElapsed } from "./stall.ts";
 import {
-  applyStreamingTranscripts,
   consumeTranscript,
   emptyTranscriptCursor,
   type TranscriptCursor,
@@ -123,8 +122,8 @@ export function createListenSession(options: {
 
   return {
     ingest(transcript: string, isFinal: boolean) {
-      const expected = words[index]?.text;
-      const consumed = consumeTranscript(cursor, transcript, isFinal, expected);
+      const upcoming = words.slice(index, index + 8).map((word) => word.text);
+      const consumed = consumeTranscript(cursor, transcript, isFinal, upcoming);
       cursor = consumed.nextCursor;
       if (!consumed.spoken.length) return snapshot();
       return applyResult(applySpokenTokens(words, index, consumed.spoken), consumed.spoken);
@@ -136,9 +135,13 @@ export function createListenSession(options: {
     },
     ingestFrames(frames: TranscriptFrame[]) {
       let last = snapshot();
-      cursor = applyStreamingTranscripts((tokens) => {
-        last = applyResult(applySpokenTokens(words, index, tokens), tokens);
-      }, frames, cursor);
+      for (const frame of frames) {
+        const upcoming = words.slice(index, index + 8).map((word) => word.text);
+        const consumed = consumeTranscript(cursor, frame.transcript, frame.isFinal, upcoming);
+        cursor = consumed.nextCursor;
+        if (!consumed.spoken.length) continue;
+        last = applyResult(applySpokenTokens(words, index, consumed.spoken), consumed.spoken);
+      }
       return last;
     },
     tick(nowMs: number) {
